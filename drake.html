@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Disposition Test</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f8f9fa; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 16px; background: #2c5aa0; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #1e3f73; }
+</style>
+</head>
+<body>
+
+<h2>CRM Call Disposition Form</h2>
+<form id="crmForm">
+    <label for="disposition">Disposition</label>
+    <select id="disposition" name="disposition">
+        <option value="">--Select--</option>
+        <option value="Completed">Completed</option>
+        <option value="Follow-up">Follow-up</option>
+        <option value="Escalated">Escalated</option>
+        <option value="No Answer">No Answer</option>
+        <option value="Callback">Callback</option>
+    </select>
+
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="4" placeholder="Enter notes..."></textarea>
+
+    <button id="saveDispo" type="button">Save Dispo</button>
+</form>
+
+<script>
+document.getElementById('saveDispo').addEventListener('click', () => {
+    alert('Disposition Saved!\n' +
+          'Disposition: ' + document.getElementById('disposition').value +
+          '\nNote: ' + document.getElementById('notes').value);
+});
+</script>
+<script src="dispo.js"></script>
+
+</body>
+</html>
