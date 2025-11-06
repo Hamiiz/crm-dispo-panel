@@ -2,17 +2,87 @@
     'use strict';
 
     const fieldIDs = {
-        disposition: 'disposition', 
-        note: 'notes', 
+        disposition: 'disposition',
+        note: 'notes',
         saveButton: 'saveDispo'
     };
 
     const DISPOSITIONS = {
-        "No Answer": ["Dead Air", "Call Dropped", "Continuous Ring"],
-        "Answering Machine": ["Voicemail Detected", "No Message Left"],
-        "Callback": ["Customer requested callback", "Scheduled follow-up"],
-        "Completed": ["Issue resolved", "Customer satisfied"]
-    };
+  "No answer": [
+    "continuous ringing",
+    "dead air",
+    "call dropped",
+    "Unidentified Hang Up",
+    "Tp hung up after hearing the funds name",
+    "TP hung up after saying hello",
+    "TP hung up before hearing the reason for the call",
+    "TP hung up before confirming the address",
+    "TP said Wrong Number when asked for Sh and Hung up",
+    "Operator transferred me to Sh Voice mail"
+  ],
+
+  "Left Message With Third Party": [
+    "left our toll-free number with TP",
+    "TP Not Interested",
+    "TP currently busy",
+    "TP hung up after hearing the reason for the call",
+    "call dropped after TP heard the reason for the call",
+    "TP stated that he no longer owns shares in the company and hung up"
+  ],
+
+  "Call Intercept": [
+    "Google/Virtual Assistant",
+    "Sound board",
+    "Smart Call Blocker",
+    "Nomo Robo",
+    "Number your calling is not accepting your call",
+    "number has been blocked",
+    "Number cannot be dialed",
+    "Ads",
+    "The party you are trying to reach is not accepting calls from this number",
+    "The number you have called cannot be dialed"
+  ],
+
+  "Operator Tritone": [
+    "number not in service",
+    "number has been disconnected"
+  ],
+
+  "DNC by tp": [
+    "TP Sayed do not call me",
+    "TP stated to be taken of our list"
+  ],
+
+  "Undecided sh not sure": [
+    "SH wants to review the materials",
+    "SH stated that he is waiting on financial advisor",
+    "SH Stated that he will vote online",
+    "SH hung up after hearing the funds name",
+    "SH hung up while confirming vote",
+    "SH requested a call back cause they're currently busy",
+    "SH hung up after hearing the reason for the call"
+  ],
+
+  "Not interested": [
+    "SH Stated that she is Not Interested",
+    "SH doesn't want to vote on the phone",
+    "SH stated that he is not interested in voting and hung up",
+    "SH is currently busy and doesn't want to vote"
+  ],
+
+  "Undecided sh waiting for an fa": [
+    "SH stated that her Financial Advisor hands this issues and hung up"
+  ],
+
+  "Will Vote": [
+    "SH stated she will return the proxy"
+  ],
+
+  "Wrong Number": [
+    "TP confirmed the address on record is incorrect"
+  ]
+};
+
 
     const style = document.createElement('style');
     style.textContent = `
@@ -76,8 +146,7 @@
     }
     h4{
         width: 100%;
-        
-    }    
+    }
     `;
     document.head.appendChild(style);
 
