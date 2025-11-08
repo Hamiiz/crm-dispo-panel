@@ -4,7 +4,7 @@
 // @version      2025-11-06
 // @description  try to take over the world!
 // @author       You
-// @match        *://*
+// @match        *://
 // @grant        none
 // ==/UserScript==
 
