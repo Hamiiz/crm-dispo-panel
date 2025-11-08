@@ -8,130 +8,50 @@
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
-console.log('working properly')
-    const fieldIDs = {
-        disposition: 'dialer_disposition',
-        note: 'dialer_notes',
-        saveButton: 'save_disposition',
-        finishButton:'end_call'
-    };
+    console.log('working properly')
 
-    const DISPOSITIONS = {
-  "No answer": {
-    value: 12,
-    notes: [
-      "continuous ringing",
-      "dead air",
-      "call dropped"
-    ]
-  },
+    const githubToken = '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' //read only token from my github
+    const GITHUB_JSON_URL = 'https://raw.githubusercontent.com/hamiiz/crm-dispo-panel/main/dispositions.json';
 
-  "Unidentified Hang Up": {
-    value: 105,
-    notes: [
-      "Tp hung up after hearing the funds name",
-      "TP hung up after saying hello",
-      "TP hung up before hearing the reason for the call",
-      "TP hung up before confirming the address",
-      "TP said Wrong Number when asked for Sh and Hung up",
-      "Operator transferred me to Sh Voice mail"
-    ]
-  },
-  "Left Message With Third Party": {
-    value: 9,
-    notes: [
-      "left our toll-free number with TP",
-      "TP said Not Interested and hu",
-      "TP currently busy",
-      "TP hung up after hearing the reason for the call",
-      "call dropped after TP heard the reason for the call",
-      "TP stated that he no longer owns shares in the company and hung up"
-    ]
-  },
+    GM.xmlHttpRequest({
+        method: 'GET',
+        url: GITHUB_JSON_URL,
+        onload: function(response) {
+            if (response.status === 200) {
+                try {
+                    const data = JSON.parse(response.responseText);
+                    initializePanel(data);
+                    console.log(' Dispositions loaded successfully.');
+                } catch (err) {
+                    console.error(' Failed to parse dispositions JSON:', err);
+                }
+            } else {
+                console.error(' GitHub request failed. Status:', response.status);
+            }
+        },
+        onerror: function(err) {
+            console.error(' Failed to fetch dispositions:', err);
+        }
+    });
 
-  "Call Intercept": {
-    value: 2,
-    notes: [
-      "Google/Virtual Assistant",
-      "Sound board",
-      "Smart Call Blocker",
-      "Nomo Robo",
-      "Number your calling is not accepting your call",
-      "number has been blocked",
-      "Number cannot be dialed",
-      "Ads",
-      "The party you are trying to reach is not accepting calls from this number",
-      "The number you have called cannot be dialed"
-    ]
-  },
+    function initializePanel(DISPOSITIONS) {
 
-  "Operator Tritone": {
-    value: 14,
-    notes: [
-      "number not in service",
-      "number has been disconnected"
-    ]
-  },
 
-  "DNC by tp": {
-    value: 4,
-    notes: [
-      "TP Sayed do not call me",
-      "TP stated to be taken of our list"
-    ]
-  },
-
-  "Undecided sh not sure": {
-    value: 27,
-    notes: [
-      "SH wants to review the materials",
-      "SH stated that he is waiting on financial advisor",
-      "SH Stated that he will vote online",
-      "SH hung up after hearing the funds name",
-      "SH hung up while confirming vote",
-      "SH requested a call back cause they're currently busy",
-      "SH hung up after hearing the reason for the call"
-    ]
-  },
-
-  "Not interested": {
-    value: 13,
-    notes: [
-      "SH Stated that she is Not Interested",
-      "SH doesn't want to vote on the phone",
-      "SH stated that he is not interested in voting and hung up",
-      "SH is currently busy and doesn't want to vote"
-    ]
-  },
-
-  "Undecided sh waiting for an fa": {
-    value: 26,
-    notes: [
-      "SH stated that her Financial Advisor hands this issues and hung up"
-    ]
-  },
-
-  "Will Vote": {
-    value: 30,
-    notes: [
-      "SH stated she will return the proxy"
-    ]
-  },
-
-  "Wrong Number": {
-    value: 31,
-    notes: [
-      "TP confirmed the address on record is incorrect"
-    ]
-  }
-};
+        const fieldIDs = {
+            disposition: 'dialer_disposition',
+            note: 'dialer_notes',
+            saveButton: 'save_disposition',
+            finishButton: 'end_call'
+        };
 
 
 
-    const style = document.createElement('style');
-    style.textContent = `
+
+
+        const style = document.createElement('style');
+        style.textContent = `
 
     #tm-dispo-panel {
         position: fixed;
@@ -211,11 +131,11 @@ console.log('working properly')
         width: 100%;
     }
     `;
-    document.head.appendChild(style);
+        document.head.appendChild(style);
 
-    const panel = document.createElement('div');
-    panel.id = 'tm-dispo-panel';
-    panel.innerHTML = `
+        const panel = document.createElement('div');
+        panel.id = 'tm-dispo-panel';
+        panel.innerHTML = `
         <h3>Dispo Panel</h3>
         <button id="collapseBtn">Toggle Panel</button>
         <div id="tm-button-container"></div>
@@ -226,82 +146,83 @@ console.log('working properly')
             <button id="tm-save">Save Dispo</button>
         </div>
     `;
-    document.body.appendChild(panel);
+        document.body.appendChild(panel);
 
-    const buttonContainer = panel.querySelector('#tm-button-container');
+        const buttonContainer = panel.querySelector('#tm-button-container');
 
-    Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
-  const groupLabel = document.createElement('h4');
-  groupLabel.textContent = dispo;
-  groupLabel.style.margin = '4px 0';
-  groupLabel.style.color = '#333';
-  buttonContainer.appendChild(groupLabel);
+        Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
+            const groupLabel = document.createElement('h4');
+            groupLabel.textContent = dispo;
+            groupLabel.style.margin = '4px 0';
+            groupLabel.style.color = '#333';
+            buttonContainer.appendChild(groupLabel);
 
-  notes.forEach(note => {
-    const btn = document.createElement('button');
-    btn.textContent = note;
-    btn.dataset.dispo = dispo;
-    btn.dataset.value = value;
-    btn.dataset.note = note;
-    btn.style.margin = '2px';
+            notes.forEach(note => {
+                const btn = document.createElement('button');
+                btn.textContent = note;
+                btn.dataset.dispo = dispo;
+                btn.dataset.value = value;
+                btn.dataset.note = note;
+                btn.style.margin = '2px';
 
-    btn.addEventListener('click', () => {
-      const dispoField = document.getElementById(fieldIDs.disposition);
-      const noteField = document.getElementById(fieldIDs.note);
+                btn.addEventListener('click', () => {
+                    const dispoField = document.getElementById(fieldIDs.disposition);
+                    const noteField = document.getElementById(fieldIDs.note);
 
-      if (dispoField) dispoField.value = value;
-      if (noteField) noteField.value = note;
-    });
+                    if (dispoField) dispoField.value = value;
+                    if (noteField) noteField.value = note;
+                });
 
-    buttonContainer.appendChild(btn);
-  });
-});
+                buttonContainer.appendChild(btn);
+            });
+        });
 
 
-    const collapseBtn = panel.querySelector('#collapseBtn');
-    collapseBtn.addEventListener('click', () => {
-        buttonContainer.style.display =
-            buttonContainer.style.display === 'none' ? 'flex' : 'none';
-    });
-    buttonContainer.style.display = 'flex';
+        const collapseBtn = panel.querySelector('#collapseBtn');
+        collapseBtn.addEventListener('click', () => {
+            buttonContainer.style.display =
+                buttonContainer.style.display === 'none' ? 'flex' : 'none';
+        });
+        buttonContainer.style.display = 'flex';
 
-    panel.querySelector('#tm-save').addEventListener('click', () => {
-        const saveBtn = document.getElementById('save_disposition_all')||document.getElementById(fieldIDs.saveButton);
-        if (saveBtn) saveBtn.click();
-        else alert('Save button not found!');
-    });
-      panel.querySelector('#tm-quick-am').addEventListener('click', () => {
-        const amBtn = document.getElementById('end_call_am');
-        if (amBtn) amBtn.click();
-        else alert('Save button not found!');
-    });
-    panel.querySelector('#tm-call-finish').addEventListener('click', () => {
-        const finBtn = document.getElementById(fieldIDs.finishButton);
-        if (finBtn) finBtn.click();
-        else alert('Save button not found!');
-    });
+        panel.querySelector('#tm-save').addEventListener('click', () => {
+            const saveBtn = document.getElementById('save_disposition_all') || document.getElementById(fieldIDs.saveButton);
+            if (saveBtn) saveBtn.click();
+            else alert('Save button not found!');
+        });
+        panel.querySelector('#tm-quick-am').addEventListener('click', () => {
+            const amBtn = document.getElementById('end_call_am');
+            if (amBtn) amBtn.click();
+            else alert('Save button not found!');
+        });
+        panel.querySelector('#tm-call-finish').addEventListener('click', () => {
+            const finBtn = document.getElementById(fieldIDs.finishButton);
+            if (finBtn) finBtn.click();
+            else alert('Save button not found!');
+        });
         panel.querySelector('#tm-quick-fax').addEventListener('click', () => {
-        const faxBtn = document.getElementById('end_call_fm');
-        if (faxBtn) faxBtn.click();
-        else alert('Save button not found!');
-    });
+            const faxBtn = document.getElementById('end_call_fm');
+            if (faxBtn) faxBtn.click();
+            else alert('Save button not found!');
+        });
 
 
 
-    let isDragging = false, offsetX, offsetY;
-    const header = panel.querySelector('h3');
-    header.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        offsetX = e.clientX - panel.offsetLeft;
-        offsetY = e.clientY - panel.offsetTop;
-    });
-    document.addEventListener('mouseup', () => isDragging = false);
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            panel.style.left = e.clientX - offsetX + 'px';
-            panel.style.top = e.clientY - offsetY + 'px';
-            panel.style.right = 'auto';
-            panel.style.bottom = 'auto';
-        }
-    });
+        let isDragging = false, offsetX, offsetY;
+        const header = panel.querySelector('h3');
+        header.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - panel.offsetLeft;
+            offsetY = e.clientY - panel.offsetTop;
+        });
+        document.addEventListener('mouseup', () => isDragging = false);
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                panel.style.left = e.clientX - offsetX + 'px';
+                panel.style.top = e.clientY - offsetY + 'px';
+                panel.style.right = 'auto';
+                panel.style.bottom = 'auto';
+            }
+        });
+    }
 })();
