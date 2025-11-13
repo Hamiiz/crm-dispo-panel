@@ -2,9 +2,10 @@
 // @name         CRM Panel (Enhanced UI)
 // @namespace    http://tampermonkey.net/
 // @version      2025-11-09
-// @description  Sleek CRM helper panel with persistent state and responsive UI
+// @description  CRM helper
 // @author       Hamza
-// @match        *://*/*
+// @match        *://serverDomain/*
+// @match        *://serverDomain/*
 // @grant        none
 // ==/UserScript==
 
@@ -21,19 +22,21 @@
 
   const DISPOSITIONS = {
     "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
-    "Unidentified Hang Up": { value: 105, notes: ["Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
-    "Left Message With Third Party": { value: 9, notes: ["left toll-free number with TP", "TP currently busy", "TP hung up after hearing the reason"] },
-    "Call Intercept": { value: 2, notes: ["Google/Virtual Assistant", "Smart Call Blocker", "Number not accepting calls"] },
+    "Machine answer":{value:11,notes:["Quick Disposition"]},
+    "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
+    "Left Message With Third Party": { value: 9, notes: ["left message without tfn","left toll-free number with TP", "TP hung up after hearing the reason"] },
+     "Machine answer":{value:11,notes:["Quick Disposition"]},
+     "Call Intercept": { value: 2, notes: ["Google/Virtual Assistant","Ads","Nomo Robo","soundboard", "Smart Call Blocker", "Number not accepting calls","number has been blocked"] },
     "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
-    "DNC by tp": { value: 4, notes: ["TP said 'do not call me'", "TP requested removal from list"] },
-    "Undecided sh not sure": { value: 27, notes: ["waiting on financial advisor", "will vote online", "requested call back"] },
-    "Not interested": { value: 13, notes: ["Not interested", "Doesn't want to vote on phone"] },
-    "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA"] },
-    "Will Vote": { value: 30, notes: ["will return the proxy"] },
+    "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested removal from list"] },
+    "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
+    "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy", "sh hu after hearing the reason of the call"]},
+    "Not interested": { value: 13, notes: ["sh said they are not interested in voting", "Doesn't want to vote on phone"] },
+    "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
+    "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
     "Wrong Number": { value: 31, notes: ["address incorrect"] }
   };
 
-  // --- STYLING ---
   const style = document.createElement('style');
   style.textContent = `
       #tm-dispo-panel {
@@ -183,7 +186,7 @@
   const panel = document.createElement('div');
   panel.id = 'tm-dispo-panel';
   panel.innerHTML = `
-      <h3>CRM Disposition Panel</h3>
+      <h3> Disposition Panel</h3>
       <button id="collapseBtn">Toggle Dispositions</button>
       <div id="tm-button-container"></div>
       <div id="tm-quick-container">
@@ -266,7 +269,7 @@
       setTimeout(() => {
         btn.disabled = false;
         btn.classList.remove('disabled-btn');
-      }, 4000);
+      }, 2000);
     });
   });
 
