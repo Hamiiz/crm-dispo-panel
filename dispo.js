@@ -4,8 +4,8 @@
 // @version      2025-11-09
 // @description  CRM helper
 // @author       Hamza
-// @match        *://Domain/*
-// @match        *://Domain/*
+// @match        *://69.10.47.54/*
+// @match        *://proxy2.alliancedialer.com/*
 // @grant        none
 // ==/UserScript==
 
