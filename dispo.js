@@ -4,8 +4,8 @@
 // @version      2025-11-09
 // @description  CRM helper
 // @author       Hamza
-// @match        *://serverDomain/*
-// @match        *://serverDomain/*
+// @match        *://Domain/*
+// @match        *://Domain/*
 // @grant        none
 // ==/UserScript==
 
@@ -194,6 +194,8 @@
           <button data-dispo="Answering Machine" class="tm-action-buttons" id="tm-quick-am" data-note="Voicemail Detected">Ans Mach</button>
           <button data-dispo="Fax" id="tm-quick-fax" class="tm-action-buttons" data-note="Fax Tone Heard">Fax</button>
           <button class="tm-action-buttons" id="tm-save">Save</button>
+          <button class="tm-action-buttons" id="tm-dupl">Duplicate</button>
+
       </div>
   `;
   document.body.appendChild(panel);
@@ -260,7 +262,14 @@
   panel.querySelector('#tm-quick-fax').addEventListener('click', () => safeClick(['end_call_fm']));
 
   const actionButtons = panel.querySelectorAll('.tm-action-buttons ');
-
+  document.querySelector('#tm-dupl').addEventListener('click',()=>{
+       const currentUrl = window.location.href;
+      const newTab = window.open(currentUrl,'_blank');
+      const transferData = {
+          referrer:window.location.href
+      };
+      sessionStorage.setItem('tabDuplicateData',JSON.stringify(transferData));
+  });
   actionButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       btn.disabled = true;
