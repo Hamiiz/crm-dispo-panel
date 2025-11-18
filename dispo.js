@@ -10,35 +10,36 @@
 // ==/UserScript==
 
 (function () {
-  'use strict';
-  console.log('CRM Dispo Panel Loaded ✅');
+    'use strict';
+    console.log('CRM Dispo Panel Loaded ✅');
 
-  const fieldIDs = {
-    disposition: 'dialer_disposition',
-    note: 'dialer_notes',
-    saveButton: 'save_disposition',
-    finishButton: 'end_call'
-  };
+    const fieldIDs = {
+        disposition: 'dialer_disposition',
+        note: 'dialer_notes',
+        saveButton: 'save_disposition',
+        finishButton: 'end_call'
+    };
 
-  const DISPOSITIONS = {
-    "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
-    "Machine answer":{value:11,notes:["Quick Disposition"]},
-    "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
-    "Left Message With Third Party": { value: 9, notes: ["left message without tfn","left toll-free number with TP", "TP hung up after hearing the reason"] },
-     "Machine answer":{value:11,notes:["Quick Disposition"]},
-     "Call Intercept": { value: 2, notes: ["Google/Virtual Assistant","Ads","Nomo Robo","soundboard", "Smart Call Blocker", "Number not accepting calls","number has been blocked"] },
-    "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
-    "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested removal from list"] },
-    "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
-    "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy", "sh hu after hearing the reason of the call"]},
-    "Not interested": { value: 13, notes: ["sh said they are not interested in voting", "Doesn't want to vote on phone"] },
-    "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
-    "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
-    "Wrong Number": { value: 31, notes: ["address incorrect"] }
-  };
+    const DISPOSITIONS = {
+        "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
+        "Machine answer":{value:11,notes:["Quick Disposition"]},
+        "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
+        "Left Message With Third Party": { value: 9, notes: ["left message without tfn","tp said not interested and hu","left toll-free number with TP", "TP hung up after hearing the reason"] },
+        "Machine answer":{value:11,notes:["Quick Disposition"]},
+        "Call Intercept": { value: 2, notes: ["Google/Virtual Assistant","Ads","Nomo Robo","soundboard", "Smart Call Blocker", "Number not accepting calls","number has been blocked"] },
+        "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
+        "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested removal from list"] },
+        "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
+        "Hang Up by contact":{value:6,notes:["sh hu after hearing the funds name", "sh hu before hearing the reason of the call"]},
+        "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy", "sh hu after hearing the reason of the call"]},
+        "Not interested": { value: 13, notes: ["sh said they are not interested in voting", "Doesn't want to vote on phone"] },
+        "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
+        "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
+        "Wrong Number": { value: 31, notes: ["address incorrect"] }
+    };
 
-  const style = document.createElement('style');
-  style.textContent = `
+    const style = document.createElement('style');
+    style.textContent = `
       #tm-dispo-panel {
           position: fixed;
           bottom: 20px;
@@ -128,6 +129,8 @@
           color: #2e7d32;
       }
 
+
+
       #tm-quick-container {
           display: flex;
           flex-wrap: wrap;
@@ -180,12 +183,23 @@
               height: 35vh;
           }
       }
-  `;
-  document.head.appendChild(style);
+      #tm-search-input{
+        border-radius:.5rem;
+        outline:none;
+        border: .5px solid gray;
+        margin:0% 3%;
+        padding:1% 3%;
 
-  const panel = document.createElement('div');
-  panel.id = 'tm-dispo-panel';
-  panel.innerHTML = `
+      }
+      #tm-search-input::placeholder{
+         color:gray;
+      }
+  `;
+    document.head.appendChild(style);
+
+    const panel = document.createElement('div');
+    panel.id = 'tm-dispo-panel';
+    panel.innerHTML = `
       <h3> Disposition Panel</h3>
       <button id="collapseBtn">Toggle Dispositions</button>
       <div id="tm-button-container"></div>
@@ -195,126 +209,163 @@
           <button data-dispo="Fax" id="tm-quick-fax" class="tm-action-buttons" data-note="Fax Tone Heard">Fax</button>
           <button class="tm-action-buttons" id="tm-save">Save</button>
           <button class="tm-action-buttons" id="tm-dupl">Duplicate</button>
+          <input id="tm-search-input" placeholder="Search ..." />
 
       </div>
   `;
-  document.body.appendChild(panel);
+    document.body.appendChild(panel);
 
-  const buttonContainer = panel.querySelector('#tm-button-container');
+    const buttonContainer = panel.querySelector('#tm-button-container');
 
-  Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
-    const groupLabel = document.createElement('h4');
-    groupLabel.textContent = dispo;
-    buttonContainer.appendChild(groupLabel);
+    Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
+        const groupLabel = document.createElement('h4');
+        groupLabel.textContent = dispo;
+        buttonContainer.appendChild(groupLabel);
 
-    notes.forEach(note => {
-      const btn = document.createElement('button');
-      btn.textContent = note;
-      btn.dataset.dispo = dispo;
-      btn.dataset.value = value;
-      btn.dataset.note = note;
-      btn.addEventListener('click', () => {
-        const dispoField = document.getElementById(fieldIDs.disposition);
-        const noteField = document.getElementById(fieldIDs.note);
-        if (dispoField) dispoField.value = value;
-        if (noteField) noteField.value = note;
-      });
-      buttonContainer.appendChild(btn);
+        notes.forEach(note => {
+            const btn = document.createElement('button');
+            btn.textContent = note;
+            btn.dataset.dispo = dispo;
+            btn.dataset.value = value;
+            btn.dataset.note = note;
+            btn.addEventListener('click', () => {
+                const dispoField = document.getElementById(fieldIDs.disposition);
+                const noteField = document.getElementById(fieldIDs.note);
+                if (dispoField) dispoField.value = value;
+                if (noteField) noteField.value = note;
+            });
+            buttonContainer.appendChild(btn);
+        });
     });
-  });
 
-  const savedPosition = JSON.parse(localStorage.getItem('tm-panel-position') || '{}');
-  const savedCollapsed = localStorage.getItem('tm-panel-collapsed') === 'true';
-  const savedSize = JSON.parse(localStorage.getItem('tm-panel-size') || '{}');
+    const savedPosition = JSON.parse(localStorage.getItem('tm-panel-position') || '{}');
+    const savedCollapsed = localStorage.getItem('tm-panel-collapsed') === 'true';
+    const savedSize = JSON.parse(localStorage.getItem('tm-panel-size') || '{}');
 
-  if (savedPosition.left && savedPosition.top) {
-    panel.style.left = savedPosition.left + 'px';
-    panel.style.top = savedPosition.top + 'px';
-    panel.style.right = 'auto';
-    panel.style.bottom = 'auto';
-  }
-
-  if (savedSize.width && savedSize.height) {
-    panel.style.width = savedSize.width + 'px';
-    panel.style.height = savedSize.height + 'px';
-  }
-
-  if (savedCollapsed) buttonContainer.style.display = 'none';
-
-  const collapseBtn = panel.querySelector('#collapseBtn');
-  collapseBtn.addEventListener('click', () => {
-    const isCollapsed = buttonContainer.style.display === 'none';
-    buttonContainer.style.display = isCollapsed ? 'flex' : 'none';
-    localStorage.setItem('tm-panel-collapsed', (!isCollapsed).toString());
-  });
-
-  const safeClick = (idList) => {
-    for (let id of idList) {
-      const el = document.getElementById(id);
-      if (el) { el.click(); return; }
+    if (savedPosition.left && savedPosition.top) {
+        panel.style.left = savedPosition.left + 'px';
+        panel.style.top = savedPosition.top + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
     }
-    alert('Action button not found!');
-  };
 
-  panel.querySelector('#tm-save').addEventListener('click', () => safeClick(['save_disposition_all', fieldIDs.saveButton]));
-  panel.querySelector('#tm-quick-am').addEventListener('click', () => safeClick(['end_call_am']));
-  panel.querySelector('#tm-call-finish').addEventListener('click', () => safeClick([fieldIDs.finishButton]));
-  panel.querySelector('#tm-quick-fax').addEventListener('click', () => safeClick(['end_call_fm']));
+    if (savedSize.width && savedSize.height) {
+        panel.style.width = savedSize.width + 'px';
+        panel.style.height = savedSize.height + 'px';
+    }
 
-  const actionButtons = panel.querySelectorAll('.tm-action-buttons ');
-  document.querySelector('#tm-dupl').addEventListener('click',()=>{
-       const currentUrl = window.location.href;
-      const newTab = window.open(currentUrl,'_blank');
-      const transferData = {
-          referrer:window.location.href
-      };
-      sessionStorage.setItem('tabDuplicateData',JSON.stringify(transferData));
-  });
-  actionButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.disabled = true;
-      btn.classList.add('disabled-btn');
+    if (savedCollapsed) buttonContainer.style.display = 'none';
 
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.classList.remove('disabled-btn');
-      }, 2000);
+    const collapseBtn = panel.querySelector('#collapseBtn');
+    collapseBtn.addEventListener('click', () => {
+        const isCollapsed = buttonContainer.style.display === 'none';
+        buttonContainer.style.display = isCollapsed ? 'flex' : 'none';
+        localStorage.setItem('tm-panel-collapsed', (!isCollapsed).toString());
     });
-  });
 
-  let isDragging = false, offsetX, offsetY;
-  const header = panel.querySelector('h3');
+    const safeClick = (idList) => {
+        for (let id of idList) {
+            const el = document.getElementById(id);
+            if (el) { el.click(); return; }
+        }
+        alert('Action button not found!');
+    };
 
-  header.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    offsetX = e.clientX - panel.offsetLeft;
-    offsetY = e.clientY - panel.offsetTop;
-  });
+    panel.querySelector('#tm-save').addEventListener('click', () => safeClick(['save_disposition_all', fieldIDs.saveButton]));
+    panel.querySelector('#tm-quick-am').addEventListener('click', () => safeClick(['end_call_am']));
+    panel.querySelector('#tm-call-finish').addEventListener('click', () => safeClick([fieldIDs.finishButton]));
+    panel.querySelector('#tm-quick-fax').addEventListener('click', () => safeClick(['end_call_fm']));
 
-  document.addEventListener('mouseup', () => {
-    if (isDragging) {
-      localStorage.setItem('tm-panel-position', JSON.stringify({
-        left: panel.offsetLeft,
-        top: panel.offsetTop
-      }));
-    }
-    isDragging = false;
-  });
 
-  document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-      panel.style.left = e.clientX - offsetX + 'px';
-      panel.style.top = e.clientY - offsetY + 'px';
-      panel.style.right = 'auto';
-      panel.style.bottom = 'auto';
-    }
-  });
+    const actionButtons = panel.querySelectorAll('.tm-action-buttons ');
+    document.querySelector('#tm-dupl').addEventListener('click',()=>{
+        const currentUrl = window.location.href;
+        const newTab = window.open(currentUrl,'_blank');
+        const transferData = {
+            referrer:window.location.href
+        };
+        sessionStorage.setItem('tabDuplicateData',JSON.stringify(transferData));
+    });
+    actionButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.disabled = true;
+            btn.classList.add('disabled-btn');
 
-  const savePanelSize = () => {
-    localStorage.setItem('tm-panel-size', JSON.stringify({
-      width: panel.offsetWidth,
-      height: panel.offsetHeight
-    }));
-  };
-  new ResizeObserver(() => savePanelSize()).observe(panel);
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.classList.remove('disabled-btn');
+            }, 2000);
+        });
+    });
+
+    let isDragging = false, offsetX, offsetY;
+    const header = panel.querySelector('h3');
+
+    header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offsetX = e.clientX - panel.offsetLeft;
+        offsetY = e.clientY - panel.offsetTop;
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            localStorage.setItem('tm-panel-position', JSON.stringify({
+                left: panel.offsetLeft,
+                top: panel.offsetTop
+            }));
+        }
+        isDragging = false;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            panel.style.left = e.clientX - offsetX + 'px';
+            panel.style.top = e.clientY - offsetY + 'px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+        }
+    });
+
+    const savePanelSize = () => {
+        localStorage.setItem('tm-panel-size', JSON.stringify({
+            width: panel.offsetWidth,
+            height: panel.offsetHeight
+        }));
+    };
+    new ResizeObserver(() => savePanelSize()).observe(panel);
+
+    const TABLE_SELECTOR = "#search_result_table";
+    const HIGHLIGHT_COLOR = "rgba(255,255,0,0.4)";
+    const table = document.querySelector(TABLE_SELECTOR);
+    if (!table) return;
+    const advSearch = document.querySelector("#tm-search-input");
+
+    let matchedCells = [];
+    advSearch.addEventListener("input", function() {
+        const query = this.value.toLowerCase();
+        const tds = table.getElementsByTagName("td");
+        matchedCells = [];
+        for (let td of tds) {
+            td.style.backgroundColor = "";
+        }
+        if (!query) return;
+        for (let td of tds) {
+            if (td.textContent.toLowerCase().includes(query)) {
+                td.style.backgroundColor = HIGHLIGHT_COLOR;
+                matchedCells.push(td);
+            }
+        }
+    });
+    advSearch.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            if (matchedCells.length > 0) {
+                matchedCells[0].scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
+        }
+    });
+
+
 })();
