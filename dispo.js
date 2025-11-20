@@ -21,6 +21,7 @@
     };
 
     const DISPOSITIONS = {
+
         "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
         "Machine answer":{value:11,notes:["Quick Disposition"]},
         "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
@@ -194,6 +195,16 @@
       #tm-search-input::placeholder{
          color:gray;
       }
+      #IbCont{
+         width:100%;
+         display:flex;
+         flex-wrap:wrap;
+
+      }
+
+      #IbCont button{
+        margin:1% 3%;
+      }
   `;
     document.head.appendChild(style);
 
@@ -210,6 +221,7 @@
           <button class="tm-action-buttons" id="tm-save">Save</button>
           <button class="tm-action-buttons" id="tm-dupl">Duplicate</button>
           <input id="tm-search-input" placeholder="Search ..." />
+          <div id="IbCont"></div>
 
       </div>
   `;
@@ -237,6 +249,27 @@
             buttonContainer.appendChild(btn);
         });
     });
+     const IB_Dispos = {
+        "Sh called in":{value:20, notes:["SH Called in "]},
+        "Endeavour":{value:61,notes:[" endeavour "]},
+        "Directory":{value:40,notes:[" directoy assistance "]}
+    };
+    const ibCont = document.querySelector('#IbCont');
+    Object.entries(IB_Dispos).forEach(([dispo, { value, notes }]) => {
+        notes.forEach(note => {
+            const btn1 = document.createElement('button');
+            btn1.textContent = note;
+            btn1.dataset.dispo = dispo;
+            btn1.dataset.value = value;
+            btn1.dataset.note = note;
+            btn1.addEventListener('click', () => {
+                const dispoField = document.getElementById(fieldIDs.disposition);
+                if (dispoField) dispoField.value = value;
+            });
+            ibCont.appendChild(btn1);
+        });
+    });
+
 
     const savedPosition = JSON.parse(localStorage.getItem('tm-panel-position') || '{}');
     const savedCollapsed = localStorage.getItem('tm-panel-collapsed') === 'true';
@@ -366,6 +399,7 @@
             }
         }
     });
+
 
 
 })();
