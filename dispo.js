@@ -5,7 +5,7 @@
 // @description  CRM helper
 // @author       Hamza
 // @match        *://69.10.47.54/*
-// @match        *://127.0.0.1:5500/drake.html
+// @match        *://proxy2.alliancedialer.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -26,22 +26,22 @@
       "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
       "Left Message With Third Party": { value: 9, notes: ["left message without tfn","tp said not interested and hu","left toll-free number with TP", "TP hung up after hearing the reason"] },
       "Machine answer":{value:11,notes:["Quick Disposition"]},
-      "Call Intercept": { value: 2, notes: ["Google/Virtual Assistant","Ads","Nomo Robo","soundboard", "Smart Call Blocker", "Number not accepting calls","number has been blocked"] },
+      "Call Intercept": { value: 2, notes: ["Virtual Assistant did not connect","Ads","Nomo Robo","soundboard","number barn", "Smart Call Blocker", "Number not accepting calls","number has been blocked"] },
       "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
-      "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested removal from list"] },
+      "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested to be removed from list"] },
       "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
       "Hang Up by contact":{value:6,notes:["sh hu after hearing the funds name", "sh hu before hearing the reason of the call"]},
-      "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy", "sh hu after hearing the reason of the call"]},
-      "Not interested": { value: 13, notes: ["sh said they are not interested in voting", "Doesn't want to vote on phone"] },
+      "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy","sh wants to review the materials", "sh hu after hearing the reason of the call"]},
+      "Not interested": { value: 13, notes: ["sh said is not interested in voting", "Doesn't want to vote on phone"] },
       "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
       "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
-      "Wrong Number": { value: 31, notes: ["address incorrect"] }
+      "Wrong Number": { value: 31, notes: [""] }
   };
 
   const IB_Dispos = {
-      "Sh called in":{value:20, notes:["SH Called in"]},
-      "Endeavour":{value:61,notes:["endeavour"]},
-      "Directory":{value:40,notes:["directory assistance"]}
+      "Sh called in":{value:20, notes:[""]},
+      "Endeavour":{value:61,notes:[""]},
+      "Directory":{value:155,notes:[""]}
   };
 
   const style = document.createElement('style');
@@ -239,6 +239,8 @@
 
     .tab-content {
         display: none;
+        padding-top:1rem;
+
     }
 
     .tab-content.active {
@@ -301,11 +303,9 @@
   // Build IB dispositions
   const ibCont = panel.querySelector('#IbCont');
   Object.entries(IB_Dispos).forEach(([dispo, { value, notes }]) => {
-    
-
       notes.forEach(note => {
           const btn1 = document.createElement('button');
-          btn1.textContent = note;
+          btn1.textContent = dispo;
           btn1.dataset.dispo = dispo;
           btn1.dataset.value = value;
           btn1.dataset.note = note;
@@ -322,11 +322,18 @@
   // Tab switching functionality
   const tabs = panel.querySelectorAll('.tm-tab');
   const tabContents = panel.querySelectorAll('.tab-content');
+  const lastTab = localStorage.getItem('tm-lastTab');
 
   tabs.forEach(tab => {
+      tabContents.forEach(c=>{
+          if (c.id == lastTab){
+               c.classList.add('active')
+           }else{
+              c.classList.remove('active')
+           }
+      });
       tab.addEventListener('click', () => {
           const targetTab = tab.dataset.tab;
-
           // Update active tab
           tabs.forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
@@ -335,6 +342,7 @@
           tabContents.forEach(content => {
               content.classList.remove('active');
               if (content.id === `${targetTab}-tab`) {
+                  localStorage.setItem('tm-lastTab',`${targetTab}-tab`)
                   content.classList.add('active');
               }
           });
@@ -387,7 +395,7 @@
           setTimeout(() => {
               btn.disabled = false;
               btn.classList.remove('disabled-btn');
-          }, 2000);
+          }, 700);
       });
   });
 
@@ -429,16 +437,19 @@
 
   const TABLE_SELECTOR = "#search_result_table";
   const HIGHLIGHT_COLOR = "rgba(255,255,0,0.4)";
-  const table = document.querySelector(TABLE_SELECTOR);
+  let table;
+    console.log(table);
   if (!table) return;
   const advSearch = document.querySelector("#tm-search-input");
 
   let matchedCells = [];
   advSearch.addEventListener("input", function() {
+      table = document.querySelector(TABLE_SELECTOR)
       const query = this.value.toLowerCase();
       const tds = table.getElementsByTagName("td");
       matchedCells = [];
       for (let td of tds) {
+          console.log(td);
           td.style.backgroundColor = "";
       }
       if (!query) return;
