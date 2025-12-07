@@ -292,9 +292,9 @@
 const agentData = sideBar?.querySelector(".user_side h5");
 const dataText = agentData?.textContent || "";
 
-let extNo = "";
+let extNo = localStorage.getItem('tm-ext-no') ||"";
 let insideBracket = false;
-
+if (extNo.length ==0){
 for (let i = 0; i < dataText.length; i++) {
 
     const char = dataText[i];
@@ -305,6 +305,7 @@ for (let i = 0; i < dataText.length; i++) {
     }
 
     if (char === ")" && insideBracket) {
+        localStorage.setItem('tm-ext-no',extNo)
         break;
     }
 
@@ -312,7 +313,7 @@ for (let i = 0; i < dataText.length; i++) {
         extNo += char;
     }
 }
-
+}
 const tmExtention = document.querySelector('#tm-extentionNo');
 
 if (tmExtention && extNo) {
