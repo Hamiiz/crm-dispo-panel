@@ -6,46 +6,46 @@
 // @author       Hamza
 // @match        *://69.10.47.54/*
 // @match        *://proxy2.alliancedialer.com/*
-// @grant        none
+// @grant GM_setClipboard
 // ==/UserScript==
 
 (function () {
-  'use strict';
-  console.log('CRM Dispo Panel Loaded ✅');
+    'use strict';
+    console.log('CRM Dispo Panel Loaded ✅');
 
-  const fieldIDs = {
-      disposition: 'dialer_disposition',
-      note: 'dialer_notes',
-      saveButton: 'save_disposition',
-      finishButton: 'end_call'
-  };
+    const fieldIDs = {
+        disposition: 'dialer_disposition',
+        note: 'dialer_notes',
+        saveButton: 'save_disposition',
+        finishButton: 'end_call'
+    };
 
-  const DISPOSITIONS = {
-      "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
-      "Machine answer":{value:11,notes:["Quick Disposition"]},
-      "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
-      "Left Message With Third Party": { value: 9, notes: ["left message without tfn","tp said not interested and hu","left toll-free number with TP", "TP hung up after hearing the reason"] },
-      "Machine answer":{value:11,notes:["Quick Disposition"]},
-      "Call Intercept": { value: 2, notes: ["Virtual Assistant did not connect","Ads","Nomo Robo","soundboard","number barn", "Smart Call Blocker", "Number not accepting calls","number has been blocked"] },
-      "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
-      "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested to be removed from list"] },
-      "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
-      "Hang Up by contact":{value:6,notes:["sh hu after hearing the funds name", "sh hu before hearing the reason of the call"]},
-      "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy","sh wants to review the materials", "sh hu after hearing the reason of the call"]},
-      "Not interested": { value: 13, notes: ["sh said is not interested in voting", "Doesn't want to vote on phone"] },
-      "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
-      "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
-      "Wrong Number": { value: 31, notes: [""] }
-  };
+    const DISPOSITIONS = {
+        "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
+        "Machine answer":{value:11,notes:["Quick Disposition"]},
+        "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
+        "Left Message With Third Party": { value: 9, notes: ["left message without tfn","tp said not interested and hu","left toll-free number with TP", "TP hung up after hearing the reason"] },
+        "Machine answer":{value:11,notes:["Quick Disposition"]},
+        "Call Intercept": { value: 2, notes: ["Virtual Assistant did not connect","Ads","Nomo Robo","soundboard","number barn", "Smart Call Blocker", "Number not accepting calls","number has been blocked"] },
+        "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
+        "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested to be removed from list"] },
+        "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
+        "Hang Up by contact":{value:6,notes:["sh hu after hearing the funds name", "sh hu before hearing the reason of the call"]},
+        "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy","sh wants to review the materials", "sh hu after hearing the reason of the call"]},
+        "Not interested": { value: 13, notes: ["sh said is not interested in voting", "Doesn't want to vote on phone"] },
+        "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
+        "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
+        "Wrong Number": { value: 31, notes: [""] }
+    };
 
-  const IB_Dispos = {
-      "Sh called in":{value:20, notes:[""]},
-      "Endeavour":{value:61,notes:[""]},
-      "Directory":{value:155,notes:[""]}
-  };
+    const IB_Dispos = {
+        "Sh called in":{value:20, notes:[""]},
+        "Endeavour":{value:61,notes:[""]},
+        "Directory":{value:155,notes:[""]}
+    };
 
-  const style = document.createElement('style');
-  style.textContent = `
+    const style = document.createElement('style');
+    style.textContent = `
     #tm-dispo-panel {
         position: fixed;
         bottom: 20px;
@@ -64,7 +64,7 @@
         font-family: 'Inter', sans-serif;
     }
 
-    #tm-dispo-panel h3 {
+    #tm-dispo-panel .tm-header {
         margin: 0;
         background: linear-gradient(135deg, #2e7d32, #43a047);
         color: white;
@@ -247,13 +247,23 @@
         display: flex;
         flex-wrap: wrap;
     }
+    #tm-extentionNo:hover{
+       cursor:pointer;
+    }
+    #tm-extentionNo{
+       width:fit-content;
+       margin:0 auto;
+    }
 `;
-  document.head.appendChild(style);
+    document.head.appendChild(style);
 
-  const panel = document.createElement('div');
-  panel.id = 'tm-dispo-panel';
-  panel.innerHTML = `
-    <h3>Disposition Panel</h3>
+    const panel = document.createElement('div');
+    panel.id = 'tm-dispo-panel';
+    panel.innerHTML = `
+    <div class='tm-header'>
+    Disposition Panel
+        <p id="tm-extentionNo"></p>
+</div>
     <div id="tm-tabs">
         <button class="tm-tab active" data-tab="dialer">Dialer</button>
         <button class="tm-tab" data-tab="ib">IB</button>
@@ -275,199 +285,238 @@
         <input id="tm-search-input" placeholder="Search ..." />
     </div>
 `;
-  document.body.appendChild(panel);
+    document.body.appendChild(panel);
 
-  // Build Dialer dispositions
-  const buttonContainer = panel.querySelector('#tm-button-container');
-  Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
-      const groupLabel = document.createElement('h4');
-      groupLabel.textContent = dispo;
-      buttonContainer.appendChild(groupLabel);
+    // Build Dialer dispositions
+    const sideBar = document.querySelector('.sidebar-nav');
+const agentData = sideBar?.querySelector(".user_side h5");
+const dataText = agentData?.textContent || "";
 
-      notes.forEach(note => {
-          const btn = document.createElement('button');
-          btn.textContent = note;
-          btn.dataset.dispo = dispo;
-          btn.dataset.value = value;
-          btn.dataset.note = note;
-          btn.addEventListener('click', () => {
-              const dispoField = document.getElementById(fieldIDs.disposition);
-              const noteField = document.getElementById(fieldIDs.note);
-              if (dispoField) dispoField.value = value;
-              if (noteField) noteField.value = note;
-          });
-          buttonContainer.appendChild(btn);
-      });
-  });
+let extNo = "";
+let insideBracket = false;
 
-  // Build IB dispositions
-  const ibCont = panel.querySelector('#IbCont');
-  Object.entries(IB_Dispos).forEach(([dispo, { value, notes }]) => {
-      notes.forEach(note => {
-          const btn1 = document.createElement('button');
-          btn1.textContent = dispo;
-          btn1.dataset.dispo = dispo;
-          btn1.dataset.value = value;
-          btn1.dataset.note = note;
-          btn1.addEventListener('click', () => {
-              const dispoField = document.getElementById(fieldIDs.disposition);
-              const noteField = document.getElementById(fieldIDs.note);
-              if (dispoField) dispoField.value = value;
-              if (noteField) noteField.value = note;
-          });
-          ibCont.appendChild(btn1);
-      });
-  });
+for (let i = 0; i < dataText.length; i++) {
 
-  // Tab switching functionality
-  const tabs = panel.querySelectorAll('.tm-tab');
-  const tabContents = panel.querySelectorAll('.tab-content');
-  const lastTab = localStorage.getItem('tm-lastTab');
+    const char = dataText[i];
 
-  tabs.forEach(tab => {
-      tabContents.forEach(c=>{
-          if (c.id == lastTab){
-               c.classList.add('active')
-           }else{
-              c.classList.remove('active')
-           }
-      });
-      tab.addEventListener('click', () => {
-          const targetTab = tab.dataset.tab;
-          // Update active tab
-          tabs.forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
+    if (char === "(") {
+        insideBracket = true;
+        continue;
+    }
 
-          // Show corresponding content
-          tabContents.forEach(content => {
-              content.classList.remove('active');
-              if (content.id === `${targetTab}-tab`) {
-                  localStorage.setItem('tm-lastTab',`${targetTab}-tab`)
-                  content.classList.add('active');
-              }
-          });
-      });
-  });
+    if (char === ")" && insideBracket) {
+        break;
+    }
 
-  const savedPosition = JSON.parse(localStorage.getItem('tm-panel-position') || '{}');
-  const savedSize = JSON.parse(localStorage.getItem('tm-panel-size') || '{}');
+    if (insideBracket && /\d/.test(char)) {
+        extNo += char;
+    }
+}
 
-  if (savedPosition.left && savedPosition.top) {
-      panel.style.left = savedPosition.left + 'px';
-      panel.style.top = savedPosition.top + 'px';
-      panel.style.right = 'auto';
-      panel.style.bottom = 'auto';
-  }
+const tmExtention = document.querySelector('#tm-extentionNo');
 
-  if (savedSize.width && savedSize.height) {
-      panel.style.width = savedSize.width + 'px';
-      panel.style.height = savedSize.height + 'px';
-  }
+if (tmExtention && extNo) {
+    tmExtention.textContent = extNo;
+    tmExtention.addEventListener('click', () => {
+    console.log('extClicked');
+    GM_setClipboard(extNo);
+});
 
-  const safeClick = (idList) => {
-      for (let id of idList) {
-          const el = document.getElementById(id);
-          if (el) { el.click(); return; }
-      }
-      alert('Action button not found!');
-  };
+}
 
-  panel.querySelector('#tm-save').addEventListener('click', () => safeClick(['save_disposition_all', fieldIDs.saveButton]));
-  panel.querySelector('#tm-quick-am').addEventListener('click', () => safeClick(['end_call_am']));
-  panel.querySelector('#tm-call-finish').addEventListener('click', () => safeClick([fieldIDs.finishButton]));
-  panel.querySelector('#tm-quick-fax').addEventListener('click', () => safeClick(['end_call_fm']));
 
-  const actionButtons = panel.querySelectorAll('.tm-action-buttons');
-  panel.querySelector('#tm-dupl').addEventListener('click',()=>{
-      const currentUrl = window.location.href;
-      const newTab = window.open(currentUrl,'_blank');
-      const transferData = {
-          referrer:window.location.href
-      };
-      sessionStorage.setItem('tabDuplicateData',JSON.stringify(transferData));
-  });
+    const buttonContainer = panel.querySelector('#tm-button-container');
+    Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
+        const groupLabel = document.createElement('h4');
+        groupLabel.textContent = dispo;
+        buttonContainer.appendChild(groupLabel);
 
-  actionButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-          btn.disabled = true;
-          btn.classList.add('disabled-btn');
+        notes.forEach(note => {
+            const btn = document.createElement('button');
+            btn.textContent = note;
+            btn.dataset.dispo = dispo;
+            btn.dataset.value = value;
+            btn.dataset.note = note;
+            btn.addEventListener('click', () => {
+                const dispoField = document.getElementById(fieldIDs.disposition);
+                const noteField = document.getElementById(fieldIDs.note);
+                if (dispoField) dispoField.value = value;
+                if (noteField) noteField.value = note;
+            });
+            buttonContainer.appendChild(btn);
+        });
+    });
 
-          setTimeout(() => {
-              btn.disabled = false;
-              btn.classList.remove('disabled-btn');
-          }, 700);
-      });
-  });
+    // Build IB dispositions
+    const ibCont = panel.querySelector('#IbCont');
+    Object.entries(IB_Dispos).forEach(([dispo, { value, notes }]) => {
+        notes.forEach(note => {
+            const btn1 = document.createElement('button');
+            btn1.textContent = dispo;
+            btn1.dataset.dispo = dispo;
+            btn1.dataset.value = value;
+            btn1.dataset.note = note;
+            btn1.addEventListener('click', () => {
+                const dispoField = document.getElementById(fieldIDs.disposition);
+                const noteField = document.getElementById(fieldIDs.note);
+                if (dispoField) dispoField.value = value;
+                if (noteField) noteField.value = note;
+            });
+            ibCont.appendChild(btn1);
+        });
+    });
 
-  let isDragging = false, offsetX, offsetY;
-  const header = panel.querySelector('h3');
+    // Tab switching functionality
+    const tabs = panel.querySelectorAll('.tm-tab');
+    const tabContents = panel.querySelectorAll('.tab-content');
+    const lastTab = localStorage.getItem('tm-lastTab');
 
-  header.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      offsetX = e.clientX - panel.offsetLeft;
-      offsetY = e.clientY - panel.offsetTop;
-  });
+    tabs.forEach(tab => {
+        tabContents.forEach(c=>{
+            if (c.id == lastTab){
+                c.classList.add('active')
+            }else{
+                c.classList.remove('active')
+            }
+        });
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
 
-  document.addEventListener('mouseup', () => {
-      if (isDragging) {
-          localStorage.setItem('tm-panel-position', JSON.stringify({
-              left: panel.offsetLeft,
-              top: panel.offsetTop
-          }));
-      }
-      isDragging = false;
-  });
+            // Show corresponding content
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === `${targetTab}-tab`) {
+                    localStorage.setItem('tm-lastTab',`${targetTab}-tab`)
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
 
-  document.addEventListener('mousemove', (e) => {
-      if (isDragging) {
-          panel.style.left = e.clientX - offsetX + 'px';
-          panel.style.top = e.clientY - offsetY + 'px';
-          panel.style.right = 'auto';
-          panel.style.bottom = 'auto';
-      }
-  });
+    const savedPosition = JSON.parse(localStorage.getItem('tm-panel-position') || '{}');
+    const savedSize = JSON.parse(localStorage.getItem('tm-panel-size') || '{}');
 
-  const savePanelSize = () => {
-      localStorage.setItem('tm-panel-size', JSON.stringify({
-          width: panel.offsetWidth,
-          height: panel.offsetHeight
-      }));
-  };
-  new ResizeObserver(() => savePanelSize()).observe(panel);
+    if (savedPosition.left && savedPosition.top) {
+        panel.style.left = savedPosition.left + 'px';
+        panel.style.top = savedPosition.top + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+    }
 
-  const TABLE_SELECTOR = "#search_result_table";
-  const HIGHLIGHT_COLOR = "rgba(255,255,0,0.4)";
-  let table;
+    if (savedSize.width && savedSize.height) {
+        panel.style.width = savedSize.width + 'px';
+        panel.style.height = savedSize.height + 'px';
+    }
+
+    const safeClick = (idList) => {
+        for (let id of idList) {
+            const el = document.getElementById(id);
+            if (el) { el.click(); return; }
+        }
+        alert('Action button not found!');
+    };
+
+    panel.querySelector('#tm-save').addEventListener('click', () => safeClick(['save_disposition_all', fieldIDs.saveButton]));
+    panel.querySelector('#tm-quick-am').addEventListener('click', () => safeClick(['end_call_am']));
+    panel.querySelector('#tm-call-finish').addEventListener('click', () => safeClick([fieldIDs.finishButton]));
+    panel.querySelector('#tm-quick-fax').addEventListener('click', () => safeClick(['end_call_fm']));
+
+    const actionButtons = panel.querySelectorAll('.tm-action-buttons');
+    panel.querySelector('#tm-dupl').addEventListener('click',()=>{
+        const currentUrl = window.location.href;
+        const newTab = window.open(currentUrl,'_blank');
+        const transferData = {
+            referrer:window.location.href
+        };
+        sessionStorage.setItem('tabDuplicateData',JSON.stringify(transferData));
+    });
+
+    actionButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.disabled = true;
+            btn.classList.add('disabled-btn');
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.classList.remove('disabled-btn');
+            }, 700);
+        });
+    });
+
+    let isDragging = false, offsetX, offsetY;
+    const header = panel.querySelector('.tm-header');
+
+
+    header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offsetX = e.clientX - panel.offsetLeft;
+        offsetY = e.clientY - panel.offsetTop;
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            localStorage.setItem('tm-panel-position', JSON.stringify({
+                left: panel.offsetLeft,
+                top: panel.offsetTop
+            }));
+        }
+        isDragging = false;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            panel.style.left = e.clientX - offsetX + 'px';
+            panel.style.top = e.clientY - offsetY + 'px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+        }
+    });
+
+    const savePanelSize = () => {
+        localStorage.setItem('tm-panel-size', JSON.stringify({
+            width: panel.offsetWidth,
+            height: panel.offsetHeight
+        }));
+    };
+    new ResizeObserver(() => savePanelSize()).observe(panel);
+
+    const TABLE_SELECTOR = "#search_result_table";
+    const HIGHLIGHT_COLOR = "rgba(255,255,0,0.4)";
+    let table;
     console.log(table);
-  if (!table) return;
-  const advSearch = document.querySelector("#tm-search-input");
+    if (!table) return;
+    const advSearch = document.querySelector("#tm-search-input");
 
-  let matchedCells = [];
-  advSearch.addEventListener("input", function() {
-      table = document.querySelector(TABLE_SELECTOR)
-      const query = this.value.toLowerCase();
-      const tds = table.getElementsByTagName("td");
-      matchedCells = [];
-      for (let td of tds) {
-          console.log(td);
-          td.style.backgroundColor = "";
-      }
-      if (!query) return;
-      for (let td of tds) {
-          if (td.textContent.toLowerCase().includes(query)) {
-              td.style.backgroundColor = HIGHLIGHT_COLOR;
-              matchedCells.push(td);
-          }
-      }
-  });
-  advSearch.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-          if (matchedCells.length > 0) {
-              matchedCells[0].scrollIntoView({
-                  behavior: "smooth",
-                  block: "center"
-              });
-          }
-      }
-  });
+    let matchedCells = [];
+    advSearch.addEventListener("input", function() {
+        table = document.querySelector(TABLE_SELECTOR)
+        const query = this.value.toLowerCase();
+        const tds = table.getElementsByTagName("td");
+        matchedCells = [];
+        for (let td of tds) {
+            console.log(td);
+            td.style.backgroundColor = "";
+        }
+        if (!query) return;
+        for (let td of tds) {
+            if (td.textContent.toLowerCase().includes(query)) {
+                td.style.backgroundColor = HIGHLIGHT_COLOR;
+                matchedCells.push(td);
+            }
+        }
+    });
+    advSearch.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            if (matchedCells.length > 0) {
+                matchedCells[0].scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
+        }
+    });
+
 })();
