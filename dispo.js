@@ -101,7 +101,8 @@
     </div>
     <div id="tm-quick-container">
         <button id="tm-call-finish">Finish</button><button id="tm-quick-am">Ans Mach</button>
-        <button id="tm-quick-fax">Fax</button><button id="tm-save" style="background: #27ae60 !important;">Save</button>
+        <button id="tm-quick-fax">Fax</button>
+        <button id="tm-save">Save</button>
         <button id="tm-dupl">duplicate</button>
 
         <div id="tm-theme-picker"></div>
