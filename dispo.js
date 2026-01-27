@@ -102,6 +102,8 @@
     <div id="tm-quick-container">
         <button id="tm-call-finish">Finish</button><button id="tm-quick-am">Ans Mach</button>
         <button id="tm-quick-fax">Fax</button><button id="tm-save" style="background: #27ae60 !important;">Save</button>
+        <button id="tm-dupl">duplicate</button>
+
         <div id="tm-theme-picker"></div>
         <label style="font-size: 10px; color: #666; width: 100%; text-align: center; cursor:pointer; padding-bottom: 5px;">
             <input type="checkbox" id="tm-append-mode"> Append Notes Mode
@@ -154,7 +156,7 @@
         };
         themePicker.appendChild(dot);
     });
-
+document.addEventListener('keydown', (e) => { if (e.altKey && e.key.toLowerCase() === 'q') { e.preventDefault(); document.getElementById('tm-quick-am').click(); } });
     const buttonContainer = panel.querySelector('#tm-button-container');
     Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
         const groupLabel = document.createElement('h4');
