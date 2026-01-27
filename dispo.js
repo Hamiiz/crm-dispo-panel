@@ -1,17 +1,16 @@
 // ==UserScript==
 // @name         CRM Panel (Enhanced UI)
 // @namespace    http://tampermonkey.net/
-// @version      2025-11-09
-// @description  CRM helper
+// @version      2025-11-14
+// @description  CRM helper with Synced Theme Colors and Expanded Palette
 // @author       Hamza
 // @match        *://69.10.47.54/*
 // @match        *://proxy2.alliancedialer.com/*
-// @grant GM_setClipboard
+// @grant        GM_setClipboard
 // ==/UserScript==
 
 (function () {
     'use strict';
-    console.log('CRM Dispo Panel Loaded ✅');
 
     const fieldIDs = {
         disposition: 'dialer_disposition',
@@ -20,504 +19,196 @@
         finishButton: 'end_call'
     };
 
+    const THEMES = {
+        cyber: { name: 'Cyber', primary: '#bc13fe', gradient: 'linear-gradient(135deg, #2b1055, #7597de)' },
+        frost: { name: 'Frost', primary: '#00d2ff', gradient: 'linear-gradient(135deg, #00d2ff, #3a7bd5)' },
+        lava: { name: 'Lava', primary: '#ff4b2b', gradient: 'linear-gradient(135deg, #ff416c, #ff4b2b)' },
+        forest: { name: 'Forest', primary: '#27ae60', gradient: 'linear-gradient(135deg, #11998e, #38ef7d)' },
+        midnight: { name: 'Midnight', primary: '#9d50bb', gradient: 'linear-gradient(135deg, #6e48aa, #9d50bb)' },
+           lava: { name: 'Lava', primary: '#b71c1c', gradient: 'linear-gradient(135deg, #eb3349, #f45c43)' },
+        void: { name: 'Void', primary: '#212121', gradient: 'linear-gradient(135deg, #000000, #434343)' }
+    };
+
+    let savedKey = localStorage.getItem('tm-theme-key') || 'cyber';
+    const currentTheme = THEMES[savedKey] || THEMES.cyber;
+
     const DISPOSITIONS = {
         "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
-        "Machine answer":{value:11,notes:["Quick Disposition"]},
-        "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
-        "Left Message With Third Party": { value: 9, notes: ["left message without tfn","tp said not interested and hu","left toll-free number with TP", "TP hung up after hearing the reason"] },
-        "Machine answer":{value:11,notes:["Quick Disposition"]},
-        "Call Intercept": { value: 2, notes: ["Virtual Assistant did not connect","Ads","Nomo Robo","soundboard","number barn", "Smart Call Blocker", "Number not accepting calls","number has been blocked"] },
-        "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
-        "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested to be removed from list"] },
-        "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
-        "Hang Up by contact":{value:6,notes:["sh hu after hearing the funds name", "sh hu before hearing the reason of the call"]},
-        "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy","sh wants to review the materials", "sh hu after hearing the reason of the call"]},
-        "Not interested": { value: 13, notes: ["sh said is not interested in voting", "Doesn't want to vote on phone"] },
-        "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
-        "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
+        "Machine answer": { value: 11, notes: ["Quick Disposition"] },
+        "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello", "Tp hu after hearing fund", "TP hu before reason", "TP hu before address", "tp hu on SH name"] },
+        "Left Message With TP": { value: 9, notes: ["left message without tfn", "tp not interested/hu", "left toll-free with TP", "TP hu after reason"] },
+        "Call Intercept": { value: 2, notes: ["VA no connect", "Ads/Nomo Robo", "Soundboard/Number Barn", "Smart Blocker", "Not accepting calls", "Number blocked"] },
+        "Operator Tritone": { value: 14, notes: ["number not in service", "number disconnected"] },
+        "DNC Request": { value: 119, notes: ["TP/SH said 'do not call'", "Requested removal from list"] },
+        "Hang Up": { value: 6, notes: ["sh hu after fund name", "sh hu before reason"] },
+        "Undecided": { value: 27, notes: ["requested call back", "sh is busy", "sh review materials", "sh think before voting", "sh hu after reason"] },
+        "Not interested": { value: 13, notes: ["not interested in voting", "hu after saying wants to vote", "no phone voting"] },
+        "Waiting for FA": { value: 26, notes: ["waiting for FA", "SH waiting for spouse"] },
+        "Will Vote": { value: 30, notes: ["will return proxy", "sh will vote online"] },
         "Wrong Number": { value: 31, notes: [""] }
     };
 
     const IB_Dispos = {
-        "Sh called in":{value:20, notes:[""]},
-        "Endeavour":{value:61,notes:[""]},
-        "Directory":{value:155,notes:[""]}
+        "Sh called in": { value: 20, notes: [""] },
+        "Endeavour": { value: 61, notes: [""] },
+        "Directory": { value: 155, notes: [""] },
+        "Nahha": { value: null, notes: [" // nahha"] },
+        "Copy AHHA": { value: null, notes: ["Ahha "] }
     };
 
     const style = document.createElement('style');
     style.textContent = `
+    :root { --tm-primary-color: ${currentTheme.primary}; --tm-header-bg: ${currentTheme.gradient}; }
     #tm-dispo-panel {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-        padding: 0;
-        width: 280px;
-        z-index: 99999;
-        resize: both;
-        overflow: hidden;
-        max-height: 90vh;
-        transition: all 0 ease;
-        font-family: 'Inter', sans-serif;
+        position: fixed; bottom: 20px; right: 20px; background: #fff; border: 1px solid #e0e0e0;
+        border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); width: 280px; z-index: 99999;
+        resize: both; overflow: hidden; max-height: 90vh; font-family: 'Segoe UI', Tahoma, sans-serif;
     }
-
     #tm-dispo-panel .tm-header {
-        margin: 0;
-        background: linear-gradient(135deg, #2e7d32, #43a047);
-        color: white;
-        padding: 10px;
-        text-align: center;
-        border-radius: 12px 12px 0 0;
-        font-size: 0.9rem;
-        cursor: move;
-        user-select: none;
-        letter-spacing: 0.5px;
-        font-weight: 600;
+        margin: 0; background: var(--tm-header-bg); color: white; padding: 12px;
+        text-align: center; border-radius: 12px 12px 0 0; font-size: 0.85rem; cursor: move;
+        user-select: none; letter-spacing: 1px; font-weight: 700; text-transform: uppercase;
+        transition: background 0.4s ease; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
     }
-
-    #tm-tabs {
-        display: flex;
-        background: #f5f5f5;
-        border-bottom: 1px solid #ddd;
-    }
-
-    .tm-tab {
-        flex: 1;
-        padding: 8px 0;
-        text-align: center;
-        background: #e0e0e0;
-        border: none;
-        cursor: pointer;
-        font-size: 0.8rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        color: #666;
-    }
-
-    .tm-tab.active {
-        background: #4CAF50;
-        color: white;
-    }
-
-    .tm-tab:hover:not(.active) {
-        background: #d6d6d6;
-    }
-
-    #tm-button-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: start;
-        overflow-y: auto;
-        margin: 0.5rem;
-        padding-top: 8px;
-        gap: 5px;
-        height: 40vh;
-        transition: all 0.2s ease;
-    }
-
-    #tm-button-container h4 {
-        width: 100%;
-        margin: 8px 0 4px;
-        color: #333;
-        font-size: 0.8rem;
-        border-left: 4px solid #4CAF50;
-        padding-left: 6px;
-    }
-
-    #tm-button-container button {
-        flex: 1 1 auto;
-        background: #f4f4f4;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 5px 8px;
-        font-size: 0.75rem;
-        cursor: pointer;
-        color: #333;
-        transition: 0.2s ease;
-    }
-
-    #tm-button-container button:hover {
-        background: #e8f5e9;
-        border-color: #4CAF50;
-        color: #2e7d32;
-    }
-
-    #tm-quick-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 5px;
-        border-top: 1px solid #ddd;
-        padding: 10px 0;
-        background: #fafafa;
-    }
-
-    #tm-quick-container button {
-        flex: 1 1 40%;
-        background: #388e3c;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 6px 0;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.8rem;
-        transition: 0.2s ease;
-    }
-
-    .disabled-btn {
-        background: #9ca3af;
-        cursor: not-allowed;
-        transform: none;
-        opacity: 0.8;
-    }
-
-    #tm-quick-container button:hover {
-        background: #2e7d32;
-    }
-
-    #tm-save {
-        background: #1976d2;
-    }
-
-    #tm-save:hover {
-        background: #1565c0;
-    }
-
-    @media (max-width: 600px) {
-        #tm-dispo-panel {
-            width: 95%;
-            left: 50%;
-            transform: translateX(-50%);
-            right: auto;
-        }
-        #tm-button-container {
-            height: 35vh;
-        }
-    }
-
-    #tm-search-input{
-      border-radius: .5rem;
-      outline: none;
-      border: .5px solid gray;
-      margin: 0% 3%;
-      padding: 1% 3%;
-      width: 94%;
-    }
-
-    #tm-search-input::placeholder{
-       color: gray;
-    }
-
-    #IbCont{
-       width: 100%;
-       display: flex;
-       flex-wrap: wrap;
-    }
-
-    #IbCont button{
-      margin: 1% 3%;
-      flex: 1 1 auto;
-      background: #f4f4f4;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 5px 8px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      color: #333;
-      transition: 0.2s ease;
-    }
-
-    #IbCont button:hover {
-        background: #e8f5e9;
-        border-color: #4CAF50;
-        color: #2e7d32;
-    }
-
-    .tab-content {
-        display: none;
-        padding-top:1rem;
-
-    }
-
-    .tab-content.active {
-        display: flex;
-        flex-wrap: wrap;
-    }
-    #tm-extentionNo:hover{
-       cursor:pointer;
-    }
-    #tm-extentionNo{
-       width:fit-content;
-       margin:0 auto;
-    }
-`;
+    #tm-tabs { display: flex; background: #f5f5f5; border-bottom: 1px solid #ddd; }
+    .tm-tab { flex: 1; padding: 8px 0; text-align: center; background: #e0e0e0; border: none; cursor: pointer; font-size: 0.75rem; font-weight: 600; color: #666; transition: 0.2s; }
+    .tm-tab.active { background: var(--tm-primary-color); color: white; }
+    #tm-button-container { display: flex; flex-wrap: wrap; overflow-y: auto; margin: 0.5rem; gap: 5px; height: 35vh; scrollbar-width: thin; }
+    #tm-button-container h4 { width: 100%; margin: 8px 0 4px; color: #333; font-size: 0.75rem; border-left: 4px solid var(--tm-primary-color); padding-left: 6px; }
+    #tm-button-container button, #IbCont button { flex: 1 1 auto; background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 5px 8px; font-size: 0.72rem; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    #tm-button-container button:active, #IbCont button:active, #tm-quick-container button:active { transform: scale(0.94); }
+    #tm-button-container button:hover { border-color: var(--tm-primary-color); color: var(--tm-primary-color); background: #fdfdfd; }
+    #tm-quick-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; border-top: 1px solid #ddd; padding: 10px 0; background: #fafafa; }
+    #tm-quick-container button { flex: 1 1 40%; background: var(--tm-primary-color); color: white; border: none; border-radius: 6px; padding: 6px 0; cursor: pointer; font-weight: 600; font-size: 0.75rem; transition: filter 0.2s; }
+    #tm-quick-container button:hover { filter: brightness(1.1); }
+    #tm-theme-picker { display: flex; justify-content: center; gap: 6px; margin: 8px 0; width: 100%; }
+    .tm-theme-dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 0 3px rgba(0,0,0,0.2); transition: transform 0.2s; }
+    .tm-theme-dot:hover { transform: scale(1.2); }
+    .tab-content { display: none; padding-top: 5px; }
+    .tab-content.active { display: flex; flex-wrap: wrap; }
+    #tm-extentionNo { display: block; cursor: pointer; margin-top: 4px; font-size: 10px; font-weight: normal; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 6px; width: fit-content; margin-left: auto; margin-right: auto; }
+    `;
     document.head.appendChild(style);
 
     const panel = document.createElement('div');
     panel.id = 'tm-dispo-panel';
     panel.innerHTML = `
-    <div class='tm-header'>
-    Disposition Panel
-        <p id="tm-extentionNo"></p>
-</div>
-    <div id="tm-tabs">
-        <button class="tm-tab active" data-tab="dialer">Dialer</button>
-        <button class="tm-tab" data-tab="ib">IB</button>
-    </div>
+    <div class='tm-header'>Dispo Panel <span id="tm-extentionNo">Ext: --</span></div>
+    <div id="tm-tabs"><button class="tm-tab active" data-tab="dialer">Dialer</button><button class="tm-tab" data-tab="ib">IB</button></div>
     <div id="tm-tab-contents">
-        <div class="tab-content active" id="dialer-tab">
-            <div id="tm-button-container"></div>
-        </div>
-        <div class="tab-content" id="ib-tab">
-            <div id="IbCont"></div>
-        </div>
+        <div class="tab-content active" id="dialer-tab"><div id="tm-button-container"></div></div>
+        <div class="tab-content" id="ib-tab"><div id="IbCont"></div></div>
     </div>
     <div id="tm-quick-container">
-        <button data-dispo="Finish" id="tm-call-finish" class="tm-action-buttons" data-note="Call Completed">Finish</button>
-        <button data-dispo="Answering Machine" class="tm-action-buttons" id="tm-quick-am" data-note="Voicemail Detected">Ans Mach</button>
-        <button data-dispo="Fax" id="tm-quick-fax" class="tm-action-buttons" data-note="Fax Tone Heard">Fax</button>
-        <button class="tm-action-buttons" id="tm-save">Save</button>
-        <button class="tm-action-buttons" id="tm-dupl">Duplicate</button>
-        <input id="tm-search-input" placeholder="Search ..." />
+        <button id="tm-call-finish">Finish</button><button id="tm-quick-am">Ans Mach</button>
+        <button id="tm-quick-fax">Fax</button><button id="tm-save" style="background: #27ae60 !important;">Save</button>
+        <div id="tm-theme-picker"></div>
+        <label style="font-size: 10px; color: #666; width: 100%; text-align: center; cursor:pointer; padding-bottom: 5px;">
+            <input type="checkbox" id="tm-append-mode"> Append Notes Mode
+        </label>
     </div>
-`;
+    `;
     document.body.appendChild(panel);
 
-    // Build Dialer dispositions
-    const sideBar = document.querySelector('.sidebar-nav');
-const agentData = sideBar?.querySelector(".user_side h5");
-const dataText = agentData?.textContent || "";
-
-let extNo = localStorage.getItem('tm-ext-no') ||"";
-let insideBracket = false;
-if (extNo.length ==0){
-for (let i = 0; i < dataText.length; i++) {
-
-    const char = dataText[i];
-
-    if (char === "(") {
-        insideBracket = true;
-        continue;
+    let extNo = localStorage.getItem('tm-ext-no') || "";
+    const agentNameEl = document.querySelector('.sidebar-nav .user_side h5');
+    if (agentNameEl) {
+        const match = agentNameEl.textContent.match(/\((\d+)\)/);
+        if (match) { extNo = match[1]; localStorage.setItem('tm-ext-no', extNo); }
     }
+    const extDisplay = panel.querySelector('#tm-extentionNo');
+    if (extNo) { extDisplay.textContent = "Ext: " + extNo; extDisplay.onclick = () => GM_setClipboard(extNo); }
 
-    if (char === ")" && insideBracket) {
-        localStorage.setItem('tm-ext-no',extNo)
-        break;
-    }
+    const appendCheck = document.getElementById('tm-append-mode');
+    appendCheck.checked = localStorage.getItem('tm-append-state') === 'true';
+    appendCheck.onchange = () => localStorage.setItem('tm-append-state', appendCheck.checked);
 
-    if (insideBracket && /\d/.test(char)) {
-        extNo += char;
-    }
-}
-}
-const tmExtention = document.querySelector('#tm-extentionNo');
+    const updateNotes = (newNote) => {
+        const noteField = document.getElementById(fieldIDs.note);
+        if (!noteField) return;
+        if (appendCheck.checked && noteField.value.trim().length > 0) {
+            noteField.value += " // " + newNote;
+        } else { noteField.value = newNote; }
+        noteField.focus();
+    };
 
-if (tmExtention && extNo) {
-    tmExtention.textContent = extNo;
-    tmExtention.addEventListener('click', () => {
-    console.log('extClicked');
-    GM_setClipboard(extNo);
-});
+    const saveSize = () => {
+        localStorage.setItem('tm-panel-size', JSON.stringify({ width: panel.offsetWidth, height: panel.offsetHeight }));
+    };
+    new ResizeObserver(saveSize).observe(panel);
 
-}
+    const lastPos = JSON.parse(localStorage.getItem('tm-panel-position') || '{}');
+    const lastSize = JSON.parse(localStorage.getItem('tm-panel-size') || '{}');
+    if(lastPos.left) Object.assign(panel.style, {left: lastPos.left+'px', top: lastPos.top+'px', right: 'auto', bottom: 'auto'});
+    if(lastSize.width) Object.assign(panel.style, {width: lastSize.width+'px', height: lastSize.height+'px'});
 
+    const themePicker = panel.querySelector('#tm-theme-picker');
+    Object.keys(THEMES).forEach(key => {
+        const dot = document.createElement('div');
+        dot.className = 'tm-theme-dot';
+        dot.style.background = THEMES[key].gradient;
+        dot.onclick = () => {
+            document.documentElement.style.setProperty('--tm-primary-color', THEMES[key].primary);
+            document.documentElement.style.setProperty('--tm-header-bg', THEMES[key].gradient);
+            localStorage.setItem('tm-theme-key', key);
+        };
+        themePicker.appendChild(dot);
+    });
 
     const buttonContainer = panel.querySelector('#tm-button-container');
     Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
         const groupLabel = document.createElement('h4');
         groupLabel.textContent = dispo;
         buttonContainer.appendChild(groupLabel);
-
         notes.forEach(note => {
             const btn = document.createElement('button');
             btn.textContent = note;
-            btn.dataset.dispo = dispo;
-            btn.dataset.value = value;
-            btn.dataset.note = note;
-            btn.addEventListener('click', () => {
-                const dispoField = document.getElementById(fieldIDs.disposition);
-                const noteField = document.getElementById(fieldIDs.note);
-                if (dispoField) dispoField.value = value;
-                if (noteField) noteField.value = note;
-            });
+            btn.onclick = () => {
+                const df = document.getElementById(fieldIDs.disposition);
+                if (df) df.value = value;
+                updateNotes(note);
+            };
             buttonContainer.appendChild(btn);
         });
     });
 
-    // Build IB dispositions
     const ibCont = panel.querySelector('#IbCont');
     Object.entries(IB_Dispos).forEach(([dispo, { value, notes }]) => {
         notes.forEach(note => {
-            const btn1 = document.createElement('button');
-            btn1.textContent = dispo;
-            btn1.dataset.dispo = dispo;
-            btn1.dataset.value = value;
-            btn1.dataset.note = note;
-            btn1.addEventListener('click', () => {
-                const dispoField = document.getElementById(fieldIDs.disposition);
-                const noteField = document.getElementById(fieldIDs.note);
-                if (dispoField) dispoField.value = value;
-                if (noteField) noteField.value = note;
-            });
-            ibCont.appendChild(btn1);
-        });
-    });
-
-    // Tab switching functionality
-    const tabs = panel.querySelectorAll('.tm-tab');
-    const tabContents = panel.querySelectorAll('.tab-content');
-    const lastTab = localStorage.getItem('tm-lastTab');
-
-    tabs.forEach(tab => {
-        tabContents.forEach(c=>{
-            if (c.id == lastTab){
-                c.classList.add('active')
-            }else{
-                c.classList.remove('active')
-            }
-        });
-        tab.addEventListener('click', () => {
-            const targetTab = tab.dataset.tab;
-            // Update active tab
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-
-            // Show corresponding content
-            tabContents.forEach(content => {
-                content.classList.remove('active');
-                if (content.id === `${targetTab}-tab`) {
-                    localStorage.setItem('tm-lastTab',`${targetTab}-tab`)
-                    content.classList.add('active');
+            const btn = document.createElement('button');
+            btn.textContent = dispo;
+            btn.onclick = () => {
+                if (dispo === "Copy AHHA") {
+                    const ctrls = [...document.querySelectorAll('#search_result_table tbody tr')].map(r => r.cells[1]?.textContent?.trim()).filter(Boolean);
+                    GM_setClipboard(ctrls.join(" // "));
+                } else {
+                    const df = document.getElementById(fieldIDs.disposition);
+                    if (df && value) df.value = value;
+                    updateNotes(note || dispo);
                 }
-            });
+            };
+            ibCont.appendChild(btn);
         });
     });
 
-    const savedPosition = JSON.parse(localStorage.getItem('tm-panel-position') || '{}');
-    const savedSize = JSON.parse(localStorage.getItem('tm-panel-size') || '{}');
-
-    if (savedPosition.left && savedPosition.top) {
-        panel.style.left = savedPosition.left + 'px';
-        panel.style.top = savedPosition.top + 'px';
-        panel.style.right = 'auto';
-        panel.style.bottom = 'auto';
-    }
-
-    if (savedSize.width && savedSize.height) {
-        panel.style.width = savedSize.width + 'px';
-        panel.style.height = savedSize.height + 'px';
-    }
-
-    const safeClick = (idList) => {
-        for (let id of idList) {
-            const el = document.getElementById(id);
-            if (el) { el.click(); return; }
-        }
-        alert('Action button not found!');
-    };
-
-    panel.querySelector('#tm-save').addEventListener('click', () => safeClick(['save_disposition_all', fieldIDs.saveButton]));
-    panel.querySelector('#tm-quick-am').addEventListener('click', () => safeClick(['end_call_am']));
-    panel.querySelector('#tm-call-finish').addEventListener('click', () => safeClick([fieldIDs.finishButton]));
-    panel.querySelector('#tm-quick-fax').addEventListener('click', () => safeClick(['end_call_fm']));
-
-    const actionButtons = panel.querySelectorAll('.tm-action-buttons');
-    panel.querySelector('#tm-dupl').addEventListener('click',()=>{
-        const currentUrl = window.location.href;
-        const newTab = window.open(currentUrl,'_blank');
-        const transferData = {
-            referrer:window.location.href
-        };
-        sessionStorage.setItem('tabDuplicateData',JSON.stringify(transferData));
+    const tabs = panel.querySelectorAll('.tm-tab');
+    tabs.forEach(t => t.onclick = () => {
+        tabs.forEach(x => x.classList.remove('active')); t.classList.add('active');
+        panel.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === t.dataset.tab + '-tab'));
     });
 
-    actionButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            btn.disabled = true;
-            btn.classList.add('disabled-btn');
+    const safeClick = (idList) => { for (let id of idList) { const el = document.getElementById(id); if (el) { el.click(); return; } } };
+    panel.querySelector('#tm-save').onclick = () => safeClick(['save_disposition_all', fieldIDs.saveButton]);
+    panel.querySelector('#tm-quick-am').onclick = () => safeClick(['end_call_am']);
+    panel.querySelector('#tm-call-finish').onclick = () => safeClick([fieldIDs.finishButton]);
+    panel.querySelector('#tm-quick-fax').onclick = () => safeClick(['end_call_fm']);
+    panel.querySelector('#tm-dupl').onclick = () => window.open(window.location.href, '_blank');
 
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.classList.remove('disabled-btn');
-            }, 700);
-        });
-    });
-
-    let isDragging = false, offsetX, offsetY;
-    const header = panel.querySelector('.tm-header');
+    let isDragging = false, ox, oy;
+    panel.querySelector('.tm-header').onmousedown = (e) => { isDragging = true; ox = e.clientX - panel.offsetLeft; oy = e.clientY - panel.offsetTop; };
+    document.onmouseup = () => { if(isDragging) localStorage.setItem('tm-panel-position', JSON.stringify({left: panel.offsetLeft, top: panel.offsetTop})); isDragging = false; };
+    document.onmousemove = (e) => { if(isDragging) { panel.style.left = e.clientX - ox + 'px'; panel.style.top = e.clientY - oy + 'px'; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
 
 
-    header.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        offsetX = e.clientX - panel.offsetLeft;
-        offsetY = e.clientY - panel.offsetTop;
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (isDragging) {
-            localStorage.setItem('tm-panel-position', JSON.stringify({
-                left: panel.offsetLeft,
-                top: panel.offsetTop
-            }));
-        }
-        isDragging = false;
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            panel.style.left = e.clientX - offsetX + 'px';
-            panel.style.top = e.clientY - offsetY + 'px';
-            panel.style.right = 'auto';
-            panel.style.bottom = 'auto';
-        }
-    });
-
-    const savePanelSize = () => {
-        localStorage.setItem('tm-panel-size', JSON.stringify({
-            width: panel.offsetWidth,
-            height: panel.offsetHeight
-        }));
-    };
-    new ResizeObserver(() => savePanelSize()).observe(panel);
-
-    const TABLE_SELECTOR = "#search_result_table";
-    const HIGHLIGHT_COLOR = "rgba(255,255,0,0.4)";
-    let table;
-    console.log(table);
-    if (!table) return;
-    const advSearch = document.querySelector("#tm-search-input");
-
-    let matchedCells = [];
-    advSearch.addEventListener("input", function() {
-        table = document.querySelector(TABLE_SELECTOR)
-        const query = this.value.toLowerCase();
-        const tds = table.getElementsByTagName("td");
-        matchedCells = [];
-        for (let td of tds) {
-            console.log(td);
-            td.style.backgroundColor = "";
-        }
-        if (!query) return;
-        for (let td of tds) {
-            if (td.textContent.toLowerCase().includes(query)) {
-                td.style.backgroundColor = HIGHLIGHT_COLOR;
-                matchedCells.push(td);
-            }
-        }
-    });
-    advSearch.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-            if (matchedCells.length > 0) {
-                matchedCells[0].scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-            }
-        }
-    });
 
 })();
