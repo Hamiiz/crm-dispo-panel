@@ -31,22 +31,25 @@
 
     let savedKey = localStorage.getItem('tm-theme-key') || 'cyber';
     const currentTheme = THEMES[savedKey] || THEMES.cyber;
-
     const DISPOSITIONS = {
         "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
-        "Machine answer": { value: 11, notes: ["Quick Disposition"] },
-        "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello", "Tp hu after hearing fund", "TP hu before reason", "TP hu before address", "tp hu on SH name"] },
-        "Left Message With TP": { value: 9, notes: ["left message without tfn", "tp not interested/hu", "left toll-free with TP", "TP hu after reason"] },
-        "Call Intercept": { value: 2, notes: ["VA no connect", "Ads/Nomo Robo", "Soundboard/Number Barn", "Smart Blocker", "Not accepting calls", "Number blocked"] },
-        "Operator Tritone": { value: 14, notes: ["number not in service", "number disconnected"] },
-        "DNC Request": { value: 119, notes: ["TP/SH said 'do not call'", "Requested removal from list"] },
-        "Hang Up": { value: 6, notes: ["sh hu after fund name", "sh hu before reason"] },
-        "Undecided": { value: 27, notes: ["requested call back", "sh is busy", "sh review materials", "sh think before voting", "sh hu after reason"] },
-        "Not interested": { value: 13, notes: ["not interested in voting", "hu after saying wants to vote", "no phone voting"] },
-        "Waiting for FA": { value: 26, notes: ["waiting for FA", "SH waiting for spouse"] },
-        "Will Vote": { value: 30, notes: ["will return proxy", "sh will vote online"] },
-        "Wrong Number": { value: 31, notes: [""] }
-    };
+        "Machine answer":{value:11,notes:["Quick Disposition"]},
+        "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
+        "Left Message With Third Party": { value: 9, notes: ["left message without tfn","tp said not interested and hu","left toll-free number with TP", "TP hung up after hearing the reason"] },
+        "Machine answer":{value:11,notes:["Quick Disposition"]},
+        "Call Intercept": { value: 2, notes: ["Virtual Assistant did not connect","Ads","Nomo Robo","number barn", "IVR", "Number not accepting calls","number has been blocked"] },
+        "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
+        "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested to be removed from list"] },
+        "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
+        "Hang Up by contact":{value:6,notes:["sh hu after hearing the funds name", "sh hu before hearing the reason of the call"]},
+        "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy","sh wants to review the materials","sh wants to think about it", "sh hu after hearing the reason of the call"]},
+        "Not interested": { value: 13, notes: ["sh is not interested in voting", "Doesn't want to vote over phone","sh hu after saying he wants to vote"] },
+        "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
+        "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
+        "Wrong Number": { value: 31, notes: [""]}
+        };
+
+
 
     const IB_Dispos = {
         "Sh called in": { value: 20, notes: [""] },
@@ -102,7 +105,7 @@
     <div id="tm-quick-container">
         <button id="tm-call-finish">Finish</button><button id="tm-quick-am">Ans Mach</button>
         <button id="tm-quick-fax">Fax</button>
-        <button id="tm-save">Save</button>
+        <button id="tm-save" >Save</button>
         <button id="tm-dupl">duplicate</button>
 
         <div id="tm-theme-picker"></div>
@@ -157,7 +160,7 @@
         };
         themePicker.appendChild(dot);
     });
-document.addEventListener('keydown', (e) => { if (e.altKey && e.key.toLowerCase() === 'q') { e.preventDefault(); document.getElementById('tm-quick-am').click(); } });
+document.addEventListener('keydown', (e) => { if (e.key ==="Tab") { e.preventDefault(); document.getElementById('tm-quick-am').click(); } });
     const buttonContainer = panel.querySelector('#tm-button-container');
     Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
         const groupLabel = document.createElement('h4');
