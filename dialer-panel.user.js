@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      2025-11-14
 // @description  CRM helper with Synced Theme Colors and Expanded Palette
-// @author       Hamza
+// @author       Hamz
 // @match        *://69.10.47.54/*
 // @match        *://proxy2.alliancedialer.com/*
 // @grant        GM_setClipboard
@@ -25,31 +25,28 @@
         lava: { name: 'Lava', primary: '#ff4b2b', gradient: 'linear-gradient(135deg, #ff416c, #ff4b2b)' },
         forest: { name: 'Forest', primary: '#27ae60', gradient: 'linear-gradient(135deg, #11998e, #38ef7d)' },
         midnight: { name: 'Midnight', primary: '#9d50bb', gradient: 'linear-gradient(135deg, #6e48aa, #9d50bb)' },
-           lava: { name: 'Lava', primary: '#b71c1c', gradient: 'linear-gradient(135deg, #eb3349, #f45c43)' },
         void: { name: 'Void', primary: '#212121', gradient: 'linear-gradient(135deg, #000000, #434343)' }
     };
 
     let savedKey = localStorage.getItem('tm-theme-key') || 'cyber';
     const currentTheme = THEMES[savedKey] || THEMES.cyber;
+
     const DISPOSITIONS = {
         "No answer": { value: 12, notes: ["continuous ringing", "dead air", "call dropped"] },
-        "Machine answer":{value:11,notes:["Quick Disposition"]},
-        "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello","Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
-        "Left Message With Third Party": { value: 9, notes: ["left message without tfn","tp said not interested and hu","left toll-free number with TP", "TP hung up after hearing the reason"] },
-        "Machine answer":{value:11,notes:["Quick Disposition"]},
-        "Call Intercept": { value: 2, notes: ["Virtual Assistant did not connect","Ads","Nomo Robo","number barn", "IVR", "Number not accepting calls","number has been blocked"] },
+        "Machine answer": { value: 11, notes: ["Quick Disposition"] },
+        "Unidentified Hang Up": { value: 105, notes: ["Tp hu after saying hello", "Tp hung up after hearing the funds name", "TP hung up before reason for the call", "TP hung up before confirming the address"] },
+        "Left Message With Third Party": { value: 9, notes: ["left message without tfn", "tp said not interested and hu", "left toll-free number with TP", "TP hung up after hearing the reason"] },
+        "Call Intercept": { value: 2, notes: ["Virtual Assistant did not connect", "Ads", "Nomo Robo", "number barn", "IVR", "Number not accepting calls", "number has been blocked"] },
         "Operator Tritone": { value: 14, notes: ["number not in service", "number has been disconnected"] },
         "DNC by tp": { value: 119, notes: ["TP said 'do not call me'", "TP requested to be removed from list"] },
         "DNC by SH": { value: 4, notes: ["SH asked not to be called", "sh requested to be removed from the list"] },
-        "Hang Up by contact":{value:6,notes:["sh hu after hearing the funds name", "sh hu before hearing the reason of the call"]},
-        "Undecided sh not sure": { value: 27, notes: ["requested call back","sh is busy","sh wants to review the materials","sh wants to think about it", "sh hu after hearing the reason of the call"]},
-        "Not interested": { value: 13, notes: ["sh is not interested in voting", "Doesn't want to vote over phone","sh hu after saying he wants to vote"] },
-        "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA","SH waiting for significant other"] },
-        "Will Vote": { value: 30, notes: ["will return the proxy","sh will vote online"] },
-        "Wrong Number": { value: 31, notes: [""]}
-        };
-
-
+        "Hang Up by contact": { value: 6, notes: ["sh hu after hearing the funds name", "sh hu before hearing the reason of the call"] },
+        "Undecided sh not sure": { value: 27, notes: ["requested call back", "sh is busy", "sh wants to review the materials", "sh wants to think about it", "sh hu after hearing the reason of the call"] },
+        "Not interested": { value: 13, notes: ["sh is not interested in voting", "Doesn't want to vote over phone", "sh hu after saying he wants to vote"] },
+        "Undecided sh waiting for an fa": { value: 26, notes: ["waiting for FA", "SH waiting for significant other"] },
+        "Will Vote": { value: 30, notes: ["will return the proxy", "sh will vote online"] },
+        "Wrong Number": { value: 31, notes: [""] }
+    };
 
     const IB_Dispos = {
         "Sh called in": { value: 20, notes: [""] },
@@ -90,6 +87,8 @@
     .tab-content { display: none; padding-top: 5px; }
     .tab-content.active { display: flex; flex-wrap: wrap; }
     #tm-extentionNo { display: block; cursor: pointer; margin-top: 4px; font-size: 10px; font-weight: normal; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 6px; width: fit-content; margin-left: auto; margin-right: auto; }
+    .tm-toggles-row { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding-bottom: 5px; }
+    .tm-toggles-row label { font-size: 10px; color: #666; cursor: pointer; }
     `;
     document.head.appendChild(style);
 
@@ -97,25 +96,33 @@
     panel.id = 'tm-dispo-panel';
     panel.innerHTML = `
     <div class='tm-header'>Dispo Panel <span id="tm-extentionNo">Ext: --</span></div>
-    <div id="tm-tabs"><button class="tm-tab active" data-tab="dialer">Dialer</button><button class="tm-tab" data-tab="ib">IB</button></div>
+    <div id="tm-tabs">
+      <button class="tm-tab active" data-tab="dialer">Dialer</button>
+      <button class="tm-tab" data-tab="ib">IB</button>
+    </div>
     <div id="tm-tab-contents">
         <div class="tab-content active" id="dialer-tab"><div id="tm-button-container"></div></div>
         <div class="tab-content" id="ib-tab"><div id="IbCont"></div></div>
+        <div class="tab-content" id="auto-tab"><div id="tm-auto-container"></div></div>
     </div>
     <div id="tm-quick-container">
-        <button id="tm-call-finish">Finish</button><button id="tm-quick-am">Ans Mach</button>
+        <button id="tm-call-finish">Finish</button>
+        <button id="tm-quick-am">Ans Mach</button>
         <button id="tm-quick-fax">Fax</button>
-        <button id="tm-save" >Save</button>
+        <button id="tm-save">Save</button>
         <button id="tm-dupl">duplicate</button>
-
         <div id="tm-theme-picker"></div>
-        <label style="font-size: 10px; color: #666; width: 100%; text-align: center; cursor:pointer; padding-bottom: 5px;">
-            <input type="checkbox" id="tm-append-mode"> Append Notes Mode
-        </label>
+        <div class="tm-toggles-row">
+            <label><input type="checkbox" id="tm-append-mode"> Append Notes Mode</label>
+            <label><input type="checkbox" id="tm-no-notes-mode"> No Notes Mode</label>
+        </div>
     </div>
     `;
     document.body.appendChild(panel);
 
+    // --- Automation tab ---
+
+    // --- Extension number ---
     let extNo = localStorage.getItem('tm-ext-no') || "";
     const agentNameEl = document.querySelector('.sidebar-nav .user_side h5');
     if (agentNameEl) {
@@ -125,29 +132,37 @@
     const extDisplay = panel.querySelector('#tm-extentionNo');
     if (extNo) { extDisplay.textContent = "Ext: " + extNo; extDisplay.onclick = () => GM_setClipboard(extNo); }
 
+    // --- Toggles ---
     const appendCheck = document.getElementById('tm-append-mode');
     appendCheck.checked = localStorage.getItem('tm-append-state') === 'true';
     appendCheck.onchange = () => localStorage.setItem('tm-append-state', appendCheck.checked);
 
+    const noNotesCheck = document.getElementById('tm-no-notes-mode');
+    noNotesCheck.checked = localStorage.getItem('tm-no-notes-state') === 'true';
+    noNotesCheck.onchange = () => localStorage.setItem('tm-no-notes-state', noNotesCheck.checked);
+
+    // --- Notes updater (respects No Notes Mode) ---
     const updateNotes = (newNote) => {
+        if (noNotesCheck.checked) return; // ← NEW: skip notes entirely
         const noteField = document.getElementById(fieldIDs.note);
         if (!noteField) return;
         if (appendCheck.checked && noteField.value.trim().length > 0) {
             noteField.value += " // " + newNote;
-        } else { noteField.value = newNote; }
+        } else {
+            noteField.value = newNote;
+        }
         noteField.focus();
     };
 
-    const saveSize = () => {
-        localStorage.setItem('tm-panel-size', JSON.stringify({ width: panel.offsetWidth, height: panel.offsetHeight }));
-    };
+    // --- Panel size/position persistence ---
+    const saveSize = () => localStorage.setItem('tm-panel-size', JSON.stringify({ width: panel.offsetWidth, height: panel.offsetHeight }));
     new ResizeObserver(saveSize).observe(panel);
-
     const lastPos = JSON.parse(localStorage.getItem('tm-panel-position') || '{}');
     const lastSize = JSON.parse(localStorage.getItem('tm-panel-size') || '{}');
-    if(lastPos.left) Object.assign(panel.style, {left: lastPos.left+'px', top: lastPos.top+'px', right: 'auto', bottom: 'auto'});
-    if(lastSize.width) Object.assign(panel.style, {width: lastSize.width+'px', height: lastSize.height+'px'});
+    if (lastPos.left) Object.assign(panel.style, { left: lastPos.left + 'px', top: lastPos.top + 'px', right: 'auto', bottom: 'auto' });
+    if (lastSize.width) Object.assign(panel.style, { width: lastSize.width + 'px', height: lastSize.height + 'px' });
 
+    // --- Theme picker ---
     const themePicker = panel.querySelector('#tm-theme-picker');
     Object.keys(THEMES).forEach(key => {
         const dot = document.createElement('div');
@@ -160,7 +175,11 @@
         };
         themePicker.appendChild(dot);
     });
-document.addEventListener('keydown', (e) => { if (e.key ==="Tab") { e.preventDefault(); document.getElementById('tm-quick-am').click(); } });
+
+    // --- Tab key shortcut ---
+    document.addEventListener('keydown', (e) => { if (e.key === "Tab") { e.preventDefault(); document.getElementById('tm-quick-am').click(); } });
+
+    // --- Dispo buttons ---
     const buttonContainer = panel.querySelector('#tm-button-container');
     Object.entries(DISPOSITIONS).forEach(([dispo, { value, notes }]) => {
         const groupLabel = document.createElement('h4');
@@ -178,6 +197,7 @@ document.addEventListener('keydown', (e) => { if (e.key ==="Tab") { e.preventDef
         });
     });
 
+    // --- IB buttons ---
     const ibCont = panel.querySelector('#IbCont');
     Object.entries(IB_Dispos).forEach(([dispo, { value, notes }]) => {
         notes.forEach(note => {
@@ -197,12 +217,14 @@ document.addEventListener('keydown', (e) => { if (e.key ==="Tab") { e.preventDef
         });
     });
 
+    // --- Tabs ---
     const tabs = panel.querySelectorAll('.tm-tab');
     tabs.forEach(t => t.onclick = () => {
         tabs.forEach(x => x.classList.remove('active')); t.classList.add('active');
         panel.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === t.dataset.tab + '-tab'));
     });
 
+    // --- Quick action buttons ---
     const safeClick = (idList) => { for (let id of idList) { const el = document.getElementById(id); if (el) { el.click(); return; } } };
     panel.querySelector('#tm-save').onclick = () => safeClick(['save_disposition_all', fieldIDs.saveButton]);
     panel.querySelector('#tm-quick-am').onclick = () => safeClick(['end_call_am']);
@@ -210,11 +232,91 @@ document.addEventListener('keydown', (e) => { if (e.key ==="Tab") { e.preventDef
     panel.querySelector('#tm-quick-fax').onclick = () => safeClick(['end_call_fm']);
     panel.querySelector('#tm-dupl').onclick = () => window.open(window.location.href, '_blank');
 
+    // --- Dragging ---
     let isDragging = false, ox, oy;
     panel.querySelector('.tm-header').onmousedown = (e) => { isDragging = true; ox = e.clientX - panel.offsetLeft; oy = e.clientY - panel.offsetTop; };
-    document.onmouseup = () => { if(isDragging) localStorage.setItem('tm-panel-position', JSON.stringify({left: panel.offsetLeft, top: panel.offsetTop})); isDragging = false; };
-    document.onmousemove = (e) => { if(isDragging) { panel.style.left = e.clientX - ox + 'px'; panel.style.top = e.clientY - oy + 'px'; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
+    document.onmouseup = () => { if (isDragging) localStorage.setItem('tm-panel-position', JSON.stringify({ left: panel.offsetLeft, top: panel.offsetTop })); isDragging = false; };
+    document.onmousemove = (e) => { if (isDragging) { panel.style.left = e.clientX - ox + 'px'; panel.style.top = e.clientY - oy + 'px'; panel.style.right = 'auto'; panel.style.bottom = 'auto'; } };
+
+    // === CONTROL # AUTO COPY ===
+    const attachControlCopy = () => {
+        Array.from(document.querySelectorAll('*'))
+            .filter(el => el.children.length === 0)
+            .forEach(el => {
+            if (el.dataset.tmControlAttached) return;
+            const text = el.textContent?.trim();
+            if (!text) return;
+            const match = text.match(/^Control\s*#:\s*([A-Za-z0-9]+)/i);
+            if (!match) return;
+            const controlValue = match[1];
+            el.dataset.tmControlAttached = "true";
+            el.style.cursor = "pointer";
+            el.style.display = "inline-block";
+            el.removeAttribute("title");
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                GM_setClipboard(controlValue);
+                el.style.outline = "2px solid #4caf50";
+                setTimeout(() => { el.style.outline = ""; }, 400);
+            });
+        });
+    };
+
+    // === CALL HISTORY NOTE COPY ===
+    const attachNoteCopy = () => {
+        // Target <td> cells whose text starts with "Note:"
+        document.querySelectorAll('td[colspan="2"]').forEach(td => {
+            if (td.dataset.tmNoteAttached) return;
+            const text = td.textContent?.trim();
+            if (!text || !text.startsWith('Note:')) return;
+
+            const noteContent = text.replace(/^Note:\s*/, '');
+            if (!noteContent) return;
+
+            td.dataset.tmNoteAttached = "true";
+            td.style.cursor = "pointer";
+            td.title = "Click to copy note";
+
+            // Visually hint: wrap note content (keep "Note: " label styled separately)
+            td.innerHTML = `<span style="color:#999;font-size:0.85em;">Note: </span><span class="tm-note-copyable" style="text-decoration:underline dotted #aaa; cursor:pointer;">${noteContent}</span>`;
+
+            td.addEventListener('click', (e) => {
+                e.stopPropagation();
+                GM_setClipboard(noteContent);
+                td.style.outline = "2px solid #4caf50";
+                setTimeout(() => { td.style.outline = ""; }, 400);
+            });
+        });
+    };
+    // === AUTO-RESIZE NOTES FIELD ===
+    const attachNotesResize = () => {
+        const notesField = document.getElementById('dialer_notes');
+        if (!notesField || notesField.dataset.tmResized) return;
+        notesField.dataset.tmResized = "true";
+        notesField.style.width = "340px";
+        notesField.style.height = "120px";
+        notesField.style.fontSize = "13px";
+        notesField.style.lineHeight = "1.5";
+        notesField.style.resize = "both";
+    };
 
 
+    attachControlCopy();
+    attachNoteCopy();
+    attachNotesResize();
+
+    const observer = new MutationObserver(() => {
+        attachControlCopy();
+        attachNoteCopy(); // ← also watch for dynamically loaded call history rows
+        attachNotesResize();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('click', function (e) {
+        if (e.target.id === 'save_disposition_all' || e.target.id === 'save_disposition') {
+            console.log('Disposition saved → refreshing...');
+            setTimeout(() => location.reload(), 100);
+        }
+    });
 
 })();
